@@ -5,7 +5,7 @@
 //         divider, and page (the original slide as a picture, for any slide not rebuilt). To rebuild a slide, give
 //         it a kind of its own and change its entry here.
 // names:  s01 .. s74 are the pptx slide numbers, so a topic can list them. `refs` is the References slide, after s64;
-//         it is not in the pptx. s101 and s102 are slides made for the live talk (NEW below), numbered past the pptx's.
+//         it is not in the pptx. s101 to s104 are slides made for the live talk (NEW below), numbered past the pptx's.
 {
 const nn = (n) => `s${String(n).padStart(2, '0')}`;
 
@@ -24,6 +24,8 @@ const KIND = {
   62: 'conclusion',                            // the three main ideas as three cards that arrive in data-flow order, each with a small drawing, then every molecule type in and atom coordinates out, then the result in one line (was three pictures and three bullets)
   101: 'swaps',                                // the same three cards at the start of the Main idea section: what AF3 changes from AF2 (replaces slide 5, an AI-made picture of AF2 against AF3)
   102: 'recap',                                // the roadmap again after the last stage, every stage done, each with its idea
+  103: 'trust',                                // the paper's Fig. 4a kept as the real figure (CC BY 4.0), cut into its two rows: AF3's own confidence against the accuracy it really had
+  104: 'using',                                // the three ways to use AF3 (the server, the code, the model parameters) and their terms, one per click
   66: 'tensorzoo',                              // the tensors table as ten cards with a drawing of each shape, built up in groups (was a table of text)
   70: 'opm',                                   // the outer product mean on tensors: m into a and b, a table per sequence, the average, flatten, a linear layer into z (was two pictures)
   69: 'pwa',                                   // pair-weighted averaging on tensors: row i of z gives the weights, the values of each sequence are added up with them, times a gate, eight heads, the update of m (was two pictures)
@@ -77,7 +79,7 @@ const KIND = {
 const HIDE = [5, 16, 20, 25, 32, 60, 61];
 
 // footer section -> the slides in it; the title and the appendix are in none
-const SECTION_OF = (n) => (n === 101 || n === 102 ? '3' : n === 1 ? null : n <= 7 ? '1' : n <= 11 ? '2' : n <= 49 ? '3' : n <= 52 ? '4' : n <= 56 ? '5' : n <= 64 ? '6' : null);
+const SECTION_OF = (n) => (n === 101 || n === 102 ? '3' : n === 103 ? '4' : n === 104 ? '6' : n === 1 ? null : n <= 7 ? '1' : n <= 11 ? '2' : n <= 49 ? '3' : n <= 52 ? '4' : n <= 56 ? '5' : n <= 64 ? '6' : null);
 
 Deck.topics({
   3: [
@@ -95,9 +97,11 @@ const APPENDIX = [65, 66, 70, 69, 71, 72, 68, 73, 74, 67];
 // The talk is put in a better order than the pptx's (see DECISIONS.md, 2026-10-24, "The story of the whole talk"), and has two slides the pptx did not:
 //   101  "From AF2 to AF3: three swaps", the first slide of the Main idea section after its outline (the conclusion's three cards, shown first here)
 //   102  the recap that closes the Main idea section (the roadmap, every stage done)
+//   103  "AF3's confidence scores track its accuracy" (Fig. 4a), the last slide of Experiments, after the comparison bars
+//   104  "Using AF3 yourself", after the conclusion and before the slide for the audience
 // Slide 6 (why it is important) opens the talk, then AF2 recalled (3), the question (4) and why it is hard (7). The cases end on the disorder slide (55), which leads into the limitations.
-const NEW = { 101: { ...AF3.slide(62), n: 101 }, 102: { ...AF3.slide(14), n: 102 } };
-const MAIN = [1, 2, 6, 3, 4, 5, 7, 8, 9, 10, 11, 12, 101, ...Array.from({ length: 37 }, (_, i) => 13 + i), 102, 50, 51, 52, 53, 54, 56, 55, 57, 58, 59, 60, 61, 62, 63, 64];
+const NEW = { 101: { ...AF3.slide(62), n: 101 }, 102: { ...AF3.slide(14), n: 102 }, 103: { ...AF3.slide(52), n: 103 }, 104: { ...AF3.slide(62), n: 104 } };
+const MAIN = [1, 2, 6, 3, 4, 5, 7, 8, 9, 10, 11, 12, 101, ...Array.from({ length: 37 }, (_, i) => 13 + i), 102, 50, 51, 52, 103, 53, 54, 56, 55, 57, 58, 59, 60, 61, 62, 104, 63, 64];
 const ORDER = MAIN.concat(APPENDIX).map((n) => NEW[n] || AF3.slide(n));
 
 for (const s of ORDER) {

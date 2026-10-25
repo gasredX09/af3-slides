@@ -9,8 +9,8 @@ const REFS = [
   {
     cite: '<b>Abramson et al.</b> Accurate structure prediction of biomolecular interactions with AlphaFold 3. <i>Nature</i> 630, 493-500 (2024). '
       + '<a href="https://doi.org/10.1038/s41586-024-07487-w">doi:10.1038/s41586-024-07487-w</a>',
-    use: 'The paper this talk is about: results and figures (the examples of complexes, Fig. 3; Fig. 1c from Extended Data Table 1; poses, Extended Data Fig. 3; disorder, Extended Data Fig. 1; nucleic acids, Extended Data Fig. 5; limitations, Fig. 5), the architecture schematic (Fig. 1d), and the Supplementary Information '
-      + '(tokenization, Methods 2.6; the MSA module, Suppl. Fig. 2 and Algs. 8-10; the Pairformer, Fig. 2a and Algs. 17 and 24; the triangle updates and attentions, Algs. 12-15; the Transition layer, Algs. 11 and 25; the diffusion module, 3.7 with Eq. 7 and Algs. 5-7 and 18-26; the confidence head, losses and ranking, Algs. 30-31 and 4.3, 5.3 and 5.9; the disorder distillation set, 2.5.2; the test sets and metrics, Methods and 6.1). Its figures are reused under CC BY 4.0.',
+    use: 'The paper this talk is about: results and figures (the examples of complexes, Fig. 3; Fig. 1c from Extended Data Table 1; poses, Extended Data Fig. 3; disorder, Extended Data Fig. 1; nucleic acids, Extended Data Fig. 5; limitations, Fig. 5; confidence against accuracy, Fig. 4a), the architecture schematic (Fig. 1d), and the Supplementary Information '
+      + '(tokenization, Methods 2.6; the MSA module, Suppl. Fig. 2 and Algs. 8-10; the Pairformer, Fig. 2a and Algs. 17 and 24; the triangle updates and attentions, Algs. 12-15; the Transition layer, Algs. 11 and 25; the diffusion module, 3.7 with Eq. 7 and Algs. 5-7 and 18-26; the confidence head, losses and ranking, Algs. 30-31 and 4.3, 5.3 and 5.9; the disorder distillation set, 2.5.2; the test sets and metrics, Methods and 6.1), and its Code availability statement. Its figures are reused under CC BY 4.0.',
   },
   {
     cite: '<b>Jumper et al.</b> Highly accurate protein structure prediction with AlphaFold. <i>Nature</i> 596, 583-589 (2021). '
@@ -41,6 +41,10 @@ const REFS = [
     use: 'The logo on the title slide.',
   },
   {
+    cite: '<b>Google DeepMind.</b> AlphaFold 3 source code. <a href="https://github.com/google-deepmind/alphafold3">github.com/google-deepmind/alphafold3</a>',
+    use: 'The terms on the Using AF3 slide: the server, the Apache 2.0 code licence and the terms of use of the model parameters (README, LICENSE, WEIGHTS_TERMS_OF_USE).',
+  },
+  {
     cite: '<b>RDKit:</b> open-source cheminformatics. <a href="https://www.rdkit.org">rdkit.org</a>',
     use: 'Molecule drawings from SMILES (tokenization, three-swaps and conclusion slides) and the phosphoserine conformer (ETKDGv3, seed 7).',
   },
@@ -51,8 +55,8 @@ AF3.kinds.references = () => ({
   notes: '',
   mount(frame, { css, esc }) {
     css(`
-      .rf-list { position: absolute; left: 4.2%; right: 4.2%; top: 14%; margin: 0; padding: 0; list-style: none; font-size: calc(var(--t-caption) * .74); }
-      .rf-list li { margin: 0 0 .4em; line-height: 1.24; }
+      .rf-list { position: absolute; left: 4.2%; right: 4.2%; top: 14%; margin: 0; padding: 0; list-style: none; font-size: calc(var(--t-caption) * .68); }
+      .rf-list li { margin: 0 0 .32em; line-height: 1.22; }
       .rf-list p { margin: 0; }
       .rf-use { margin-top: .08em !important; color: var(--muted); }
       .rf-list a { color: var(--accent); text-decoration: none; white-space: nowrap; }
