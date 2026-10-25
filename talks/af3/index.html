@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<link rel="icon" href="data:,">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AlphaFold 3</title>
+<!--
+  The AF3 talk as a live deck (Generative AI for Biomedicine, Fall 2026), ported from the final Google Slides
+  deck. Runtime: ../../web and ../../vendor, fetched by ../../setup.sh. Slide data: data/slides.js, written by
+  ../../tools/pptx_to_deck.py from the pptx (kept local), with its pictures in figures/. Arrow keys or clicks step,
+  S speaker notes, O overview, F fullscreen, T dark/light, L laser pointer. Opens straight from disk.
+-->
+<link rel="stylesheet" href="../../vendor/reveal/reveal.css">
+<link rel="stylesheet" href="../../web/deck.css">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+</head>
+<body>
+<div class="reveal"><div class="slides"></div></div>
+
+<!-- the runtime -->
+<script src="../../vendor/reveal/reveal.js"></script>
+<script src="../../vendor/reveal/notes.js"></script>
+<script src="../../vendor/manim-web/manim-web.iife.js"></script>
+<script>ManimWeb.setKatexStylesheetUrl(null);</script> <!-- KaTeX CSS is already loaded above; stop M.MathTex reaching the CDN for it -->
+<script src="../../web/deck.js"></script>
+<script src="../../web/manim.js"></script>
+<script src="../../web/plots.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+
+<!-- the slide data, converted from the pptx -->
+<script src="data/slides.js"></script>
+<script src="data/tokens.js"></script>
+<script src="data/conformer.js"></script>
+
+<!-- the slide kinds, then the plan that registers every slide in order and starts the deck -->
+<script src="slides/common.js"></script>
+<script src="slides/generic.js"></script>
+<script src="slides/title.js"></script>
+<script src="slides/outline.js"></script>
+<script src="slides/special.js"></script>
+<script src="slides/cards.js"></script>
+<script src="slides/tables.js"></script>
+<script src="slides/arch.js"></script>
+<script src="slides/diffusion.js"></script>
+<script src="slides/tokens.js"></script>
+<script src="slides/equations.js"></script>
+<script src="slides/io.js"></script>
+<script src="slides/challenge.js"></script>
+<script src="slides/af2.js"></script>
+<script src="slides/reps.js"></script>
+<script src="slides/prep.js"></script>
+<script src="slides/coevo.js"></script>
+<script src="slides/conformer.js"></script>
+<script src="slides/pool.js"></script>
+<script src="slides/pairinit.js"></script>
+<script src="slides/embeddings.js"></script>
+<script src="slides/glance2.js"></script>
+<script src="slides/trunk.js"></script>
+<script src="slides/triangle.js"></script>
+<script src="slides/templates.js"></script>
+<script src="slides/msamodule.js"></script>
+<script src="slides/pairformer.js"></script>
+<script src="slides/outgoing.js"></script>
+<script src="slides/trattn.js"></script>
+<script src="slides/pairbias.js"></script>
+<script src="slides/diffmodule.js"></script>
+<script src="slides/atomenc.js"></script>
+<script src="slides/ditblock.js"></script>
+<script src="slides/confidence.js"></script>
+<script src="slides/losses.js"></script>
+<script src="slides/evalrig.js"></script>
+<script src="slides/evalbars.js"></script>
+<script src="slides/poses.js"></script>
+<script src="slides/disorder.js"></script>
+<script src="slides/nucleic.js"></script>
+<script src="slides/limits.js"></script>
+<script src="slides/matters.js"></script>
+<script src="slides/recall.js"></script>
+<script src="slides/conclusion.js"></script>
+<script src="slides/appendix.js"></script>
+<script src="slides/tensorzoo.js"></script>
+<script src="slides/opm.js"></script>
+<script src="slides/pwa.js"></script>
+<script src="slides/swiglu.js"></script>
+<script src="slides/condtoken.js"></script>
+<script src="slides/condatom.js"></script>
+<script src="slides/gating.js"></script>
+<script src="slides/references.js"></script>
+<script src="slides/plan.js"></script>
+</body>
+</html>
