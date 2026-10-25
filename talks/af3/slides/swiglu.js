@@ -36,10 +36,10 @@ const TOP = { x: 20, y: 44 }, TOP_H = { x: 208, y: 44 }, TOP_R = { x: 528, y: 44
 const BOT_X = { x: 20, y: 235 }, BOT_A = { x: 208, y: 170 }, BOT_B = { x: 208, y: 300 }, BOT_S = { x: 528, y: 170 }, BOT_P = { x: 528, y: 300 }, BOT_O = { x: 830, y: 300 };
 
 const CAPTIONS = [
-  'A Transition layer treats each token (or pair) on its own. Its vector x is widened by a linear layer, passed through a nonlinearity, and shrunk back by a second linear layer. Here 3 numbers are widened to 6.',
+  'A Transition layer treats each token (or pair) on its own. Its vector $x$ is widened by a linear layer, passed through a nonlinearity, and shrunk back by a second linear layer. Here 3 numbers are widened to 6.',
   'The ReLU version, as in AlphaFold 2: keep the positive numbers, set the negative ones to zero. A second linear layer then brings the vector back to its size.',
-  'The SwiGLU version splits the widening in two: two linear layers give a and b from the same x.',
-  'swish(a) = a × sigmoid(a) is a smooth ReLU: small negative numbers leak through instead of being cut off. It is multiplied with b entry by entry, so b acts as a gate that opens or closes each channel.',
+  'The SwiGLU version splits the widening in two: two linear layers give $a$ and $b$ from the same $x$.',
+  '$\\mathrm{swish}(a) = a \\times \\mathrm{sigmoid}(a)$ is a smooth ReLU: small negative numbers leak through instead of being cut off. It is multiplied with $b$ entry by entry, so $b$ acts as a gate that opens or closes each channel.',
   'A last linear layer brings the vector back to its size. In AF3 every Transition layer uses SwiGLU (6 numbers here, 4 times the size in the trunk and 2 times in the diffusion module). ReLU remains in the atom attention.',
 ];
 
@@ -54,6 +54,7 @@ AF3.kinds.swiglu = (s) => ({
       .sg-t.muted { fill: var(--muted); }
       .sg-caps { position: absolute; left: 4.2%; right: 4.2%; top: 82.5%; height: 10.5%; }
       .sg-cap { position: absolute; left: 0; right: 0; top: 0; margin: 0; font-size: var(--t-small); line-height: 1.3; font-weight: 600; }
+      .sg-cap .af3-tex { white-space: nowrap; }   /* a formula never breaks across two lines */
     `);
     const heading = AF3.apTitle(s);
 
@@ -70,6 +71,8 @@ AF3.kinds.swiglu = (s) => ({
     const col = (v) => (v >= 0 ? lerpColor(P_LIGHT, POS, Math.min(1, v / 1.0)) : lerpColor(N_LIGHT, NEG, Math.min(1, -v / 1.0)));
     const fmt = (v) => (Math.abs(v) < 0.05 ? '0' : v.toFixed(1));
     const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : `<text x="${x}" y="${y}" font-size="${size}" class="sg-t${o.muted ? ' muted' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''}${o.fill ? ` style="fill:${o.fill}"` : ''} opacity="${op.toFixed(2)}">${str}</text>`;
+    const M = (x, y, size, src, op, o = {}) => AF3.svgMath(x, y, size, src, { ...o, op });      // a symbol or formula, set in KaTeX
+    const R = (x, y, size, str, op, o = {}) => AF3.svgRich(x, y, size, str, { ...o, op });      // words with $math$ in them
     const cells = (g0, vals, op, cw = CW) => {   // a vector as a row of cells with the numbers in them
       if (op < 0.01) return '';
       let h = '';
@@ -101,7 +104,7 @@ AF3.kinds.swiglu = (s) => ({
 
       // ---- the ReLU version ----
       h += txt(TOP.x, 22, 15, 'ReLU: the transition of AlphaFold 2', ramp(a, 0, 0.2), { anchor: 'start', bold: true });
-      h += cells(TOP, X, ramp(a, 0, 0.25)) + txt(TOP.x + (D * CW) / 2, TOP.y + CH + 17, 13, 'x', ramp(a, 0, 0.25), { muted: true });
+      h += cells(TOP, X, ramp(a, 0, 0.25)) + M(TOP.x + (D * CW) / 2, TOP.y + CH + 17, 13, 'x', ramp(a, 0, 0.25), { muted: true });
       h += arrow(TOP.x + D * CW + 8, TOP.y + CH / 2, TOP_H.x - 8, TOP.y + CH / 2, ramp(a, 0.25, 0.5)) + txt((TOP.x + D * CW + TOP_H.x) / 2, TOP.y - 4, 13, 'linear', ramp(a, 0.35, 0.55), { muted: true });
       h += cells(TOP_H, HV, ramp(a, 0.5, 0.8)) + txt(TOP_H.x + (H * CW) / 2, TOP.y + CH + 17, 13, 'widened: 6 numbers', ramp(a, 0.6, 0.85), { muted: true });
       h += arrow(TOP_H.x + H * CW + 8, TOP.y + CH / 2, TOP_R.x - 8, TOP.y + CH / 2, ramp(b, 0, 0.25));
@@ -113,21 +116,21 @@ AF3.kinds.swiglu = (s) => ({
 
       // ---- the SwiGLU version ----
       h += txt(BOT_X.x, 138, 15, 'SwiGLU: the transition of AlphaFold 3', ramp(c, 0, 0.2), { anchor: 'start', bold: true });
-      h += cells(BOT_X, X, ramp(c, 0, 0.25)) + txt(BOT_X.x + (D * CW) / 2, BOT_X.y + CH + 17, 13, 'x', ramp(c, 0, 0.25), { muted: true });
+      h += cells(BOT_X, X, ramp(c, 0, 0.25)) + M(BOT_X.x + (D * CW) / 2, BOT_X.y + CH + 17, 13, 'x', ramp(c, 0, 0.25), { muted: true });
       const ax = BOT_X.x + D * CW + 8, ay = BOT_X.y + CH / 2;
       h += arrow(ax, ay - 6, BOT_A.x - 8, BOT_A.y + CH / 2, ramp(c, 0.25, 0.5)) + arrow(ax, ay + 6, BOT_B.x - 8, BOT_B.y + CH / 2, ramp(c, 0.25, 0.5));
       h += txt(150, 188, 13, 'linear', ramp(c, 0.35, 0.55), { muted: true }) + txt(150, 316, 13, 'linear', ramp(c, 0.35, 0.55), { muted: true });
-      h += cells(BOT_A, AV, ramp(c, 0.5, 0.8)) + txt(BOT_A.x + (H * CW) / 2, BOT_A.y - 10, 14, 'a', ramp(c, 0.55, 0.8), { bold: true });
-      h += cells(BOT_B, BV, ramp(c, 0.55, 0.85)) + txt(BOT_B.x + (H * CW) / 2, BOT_B.y - 10, 14, 'b', ramp(c, 0.6, 0.85), { bold: true });
+      h += cells(BOT_A, AV, ramp(c, 0.5, 0.8)) + M(BOT_A.x + (H * CW) / 2, BOT_A.y - 10, 14, 'a', ramp(c, 0.55, 0.8), { bold: true });
+      h += cells(BOT_B, BV, ramp(c, 0.55, 0.85)) + M(BOT_B.x + (H * CW) / 2, BOT_B.y - 10, 14, 'b', ramp(c, 0.6, 0.85), { bold: true });
       // swish of a
       h += arrow(BOT_A.x + H * CW + 8, BOT_A.y + CH / 2, BOT_S.x - 8, BOT_S.y + CH / 2, ramp(d, 0, 0.25));
       h += plot((BOT_A.x + H * CW + BOT_S.x) / 2, BOT_A.y - 8, swish, ramp(d, 0.1, 0.5), ramp(d, 0, 0.2)) + txt((BOT_A.x + H * CW + BOT_S.x) / 2, BOT_A.y + CH / 2 + 20, 13, 'swish', ramp(d, 0.2, 0.4), { muted: true, bold: true });
       const st4 = ramp(d, 0.45, 0.8);
-      h += cells(BOT_S, morph(AV, SV, st4), ramp(d, 0.3, 0.5)) + txt(BOT_S.x + (H * CW) / 2, BOT_S.y - 10, 14, 'swish(a)', ramp(d, 0.5, 0.8), { bold: true });
+      h += cells(BOT_S, morph(AV, SV, st4), ramp(d, 0.3, 0.5)) + M(BOT_S.x + (H * CW) / 2, BOT_S.y - 10, 14, '\\mathbf{swish}(\\boldsymbol{a})', ramp(d, 0.5, 0.8));
       // times b
-      h += arrow(BOT_B.x + H * CW + 8, BOT_B.y + CH / 2, BOT_P.x - 8, BOT_P.y + CH / 2, ramp(d, 0.55, 0.75)) + txt((BOT_B.x + H * CW + BOT_P.x) / 2, BOT_B.y + CH / 2 - 14, 18, '×', ramp(d, 0.65, 0.8));
+      h += arrow(BOT_B.x + H * CW + 8, BOT_B.y + CH / 2, BOT_P.x - 8, BOT_P.y + CH / 2, ramp(d, 0.55, 0.75)) + M((BOT_B.x + H * CW + BOT_P.x) / 2, BOT_B.y + CH / 2 - 14, 18, '\\times', ramp(d, 0.65, 0.8));
       h += arrow(BOT_S.x + (H * CW) / 2, BOT_S.y + CH + 6, BOT_P.x + (H * CW) / 2, BOT_P.y - 8, ramp(d, 0.6, 0.8));
-      h += cells(BOT_P, PV, ramp(d, 0.75, 0.95)) + txt(BOT_P.x + (H * CW) / 2, BOT_P.y + CH + 17, 13, 'swish(a) × b, entry by entry', ramp(d, 0.85, 1), { muted: true });
+      h += cells(BOT_P, PV, ramp(d, 0.75, 0.95)) + R(BOT_P.x + (H * CW) / 2, BOT_P.y + CH + 17, 13, '$\\mathrm{swish}(a) \\times b$, entry by entry', ramp(d, 0.85, 1), { muted: true });
       // back to the size of x
       h += arrow(BOT_P.x + H * CW + 8, BOT_P.y + CH / 2, BOT_O.x - 8, BOT_O.y + CH / 2, ramp(e, 0, 0.25)) + txt((BOT_P.x + H * CW + BOT_O.x) / 2, BOT_P.y + CH / 2 - 14, 13, 'linear', ramp(e, 0.1, 0.35), { muted: true });
       h += cells(BOT_O, OUT_S, ramp(e, 0.3, 0.6)) + txt(BOT_O.x + (D * CW) / 2, BOT_O.y + CH + 17, 13, 'back to 3', ramp(e, 0.5, 0.75), { muted: true });
@@ -137,7 +140,7 @@ AF3.kinds.swiglu = (s) => ({
 
     frame.innerHTML = `<h2 class="deck-heading">${esc(heading)}</h2>
       <div class="sg-wrap"><svg viewBox="0 0 1000 345" role="img" aria-label="Two transition layers on the same numbers: the ReLU version widens x, sets the negative numbers to zero and shrinks the vector back; the SwiGLU version makes a and b from x with two linear layers, multiplies swish of a with b entry by entry and shrinks the vector back"></svg></div>
-      <div class="sg-caps">${CAPTIONS.map((t, i) => `<p class="sg-cap reveal-in" data-show="${i + 1}">${esc(t)}</p>`).join('')}</div>
+      <div class="sg-caps">${CAPTIONS.map((t, i) => `<p class="sg-cap reveal-in" data-show="${i + 1}">${AF3.rich(t, esc)}</p>`).join('')}</div>
       ${AF3.arch.mini(s.n, heading.length)}`;
     const svg = frame.querySelector('svg');
 

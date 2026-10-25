@@ -54,19 +54,19 @@ const along = (pts, t) => {
 };
 
 const CAPTIONS = { outgoing: [
-  'z holds a vector for every pair of tokens. Here we update one entry, z_ij.',
-  'First z is projected twice, into a and b. Each projection is a linear layer multiplied by a gate: numbers between 0 and 1 that can switch parts of it off.',
-  'For z_ij, take row i of a and row j of b. Entry k in each comes from the edge to token k: z_ik gives a_ik, and z_jk gives b_jk.',
-  'Multiply the two rows entry by entry, number by number: one product for every token k.',
-  'Add up the products over all k. A layer norm, a linear layer and a gate computed from z_ij turn the sum into the update for z_ij.',
-  'The same is done for every pair i, j, each time with row i of a and row j of b. The result is added to z.',
+  '$z$ holds a vector for every pair of tokens. Here we update one entry, $z_{ij}$.',
+  'First $z$ is projected twice, into $a$ and $b$. Each projection is a linear layer multiplied by a gate: numbers between 0 and 1 that can switch parts of it off.',
+  'For $z_{ij}$, take row $i$ of $a$ and row $j$ of $b$. Entry $k$ in each comes from the edge to token $k$: $z_{ik}$ gives $a_{ik}$, and $z_{jk}$ gives $b_{jk}$.',
+  'Multiply the two rows entry by entry, number by number: one product for every token $k$.',
+  'Add up the products over all $k$. A layer norm, a linear layer and a gate computed from $z_{ij}$ turn the sum into the update for $z_{ij}$.',
+  'The same is done for every pair $i, j$, each time with row $i$ of $a$ and row $j$ of $b$. The result is added to $z$.',
 ], incoming: [
-  'z holds a vector for every pair of tokens. Here we update one entry, z_ij. This time we use the edges that come in to i and to j.',
-  'First z is projected twice, into a and b. Each projection is a linear layer multiplied by a gate: numbers between 0 and 1 that can switch parts of it off.',
-  'For z_ij, take column i of a and column j of b. Entry k in each comes from the edge from token k: z_ki gives a_ki, and z_kj gives b_kj.',
-  'Multiply the two columns entry by entry, number by number: one product for every token k.',
-  'Add up the products over all k. A layer norm, a linear layer and a gate computed from z_ij turn the sum into the update for z_ij.',
-  'The same is done for every pair i, j, each time with column i of a and column j of b. The result is added to z.',
+  '$z$ holds a vector for every pair of tokens. Here we update one entry, $z_{ij}$. This time we use the edges that come in to $i$ and to $j$.',
+  'First $z$ is projected twice, into $a$ and $b$. Each projection is a linear layer multiplied by a gate: numbers between 0 and 1 that can switch parts of it off.',
+  'For $z_{ij}$, take column $i$ of $a$ and column $j$ of $b$. Entry $k$ in each comes from the edge from token $k$: $z_{ki}$ gives $a_{ki}$, and $z_{kj}$ gives $b_{kj}$.',
+  'Multiply the two columns entry by entry, number by number: one product for every token $k$.',
+  'Add up the products over all $k$. A layer norm, a linear layer and a gate computed from $z_{ij}$ turn the sum into the update for $z_{ij}$.',
+  'The same is done for every pair $i, j$, each time with column $i$ of $a$ and column $j$ of $b$. The result is added to $z$.',
 ] };
 
 const make = (mode) => (s) => ({
@@ -80,7 +80,7 @@ const make = (mode) => (s) => ({
       .og-t.muted { fill: var(--muted); }
       .og-caps { position: absolute; left: 4.2%; right: 4.2%; top: 82.5%; height: 10.5%; }
       .og-cap { position: absolute; left: 0; right: 0; top: 0; margin: 0; font-size: var(--t-small); line-height: 1.3; font-weight: 600; }
-      .og-cap sub { font-size: .7em; }
+      .og-cap .af3-tex { white-space: nowrap; }   /* a formula never breaks across two lines */
     `);
     const title = AF3.texts(s).find((t) => t.ph === 'title') || AF3.texts(s).slice().sort((a, b) => a.g.y - b.g.y)[0];
     const inc = mode === 'incoming';   // the incoming update takes columns where the outgoing one takes rows
@@ -106,6 +106,8 @@ const make = (mode) => (s) => ({
     const zcol = (r, c) => shade(BLUE, (ZV[r][c] - 0.5) * 0.35);
     const acol = (v) => lerpColor(A_LIGHT, A_DEEP, mean(v)), bcol = (v) => lerpColor(B_LIGHT, B_DEEP, mean(v)), ocol = (v) => lerpColor(O_LIGHT, O_DEEP, v);
     const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : `<text x="${x}" y="${y}" font-size="${size}" class="og-t${o.muted ? ' muted' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''}${o.fill ? ` style="fill:${o.fill}"` : ''} opacity="${op.toFixed(2)}">${str}</text>`;
+    const M = (x, y, size, src, op, o = {}) => AF3.svgMath(x, y, size, src, { ...o, op });      // a symbol or formula, set in KaTeX
+    const R = (x, y, size, str, op, o = {}) => AF3.svgRich(x, y, size, str, { ...o, op });      // words with $math$ in them
     const rect = (x, y, w, h, fill, stroke, sw, op = 1) => op < 0.01 ? '' : `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" opacity="${op.toFixed(2)}"/>`;
     const grid = (g0, col, op) => {
       let h = '';
@@ -130,8 +132,8 @@ const make = (mode) => (s) => ({
       // ---- z, with the entry z_ij ----
       h += grid(Z, (r, cc) => zcol(r, cc), ramp(a, 0, 0.3));
       h += rect(Z.x + J * CELL, Z.y + I * CELL, CELL, CELL, 'none', 'var(--accent)', 3, ramp(a, 0.35, 0.6));
-      h += `<text x="150" y="${Z.y + I * CELL + CELL / 2}" font-size="15" font-weight="700" class="og-t" style="fill:var(--accent)" text-anchor="start" opacity="${ramp(a, 0.4, 0.65).toFixed(2)}">z<tspan dy="4" font-size="75%">ij</tspan></text>`;
-      h += txt(85, 228, 20, 'z', ramp(a, 0, 0.3), { bold: true }) + txt(85, 247, 13, 'a vector in', ramp(a, 0, 0.3), { muted: true }) + txt(85, 263, 13, 'every cell', ramp(a, 0, 0.3), { muted: true });
+      h += M(150, Z.y + I * CELL + CELL / 2, 15, 'z_{ij}', ramp(a, 0.4, 0.65), { anchor: 'start', accent: true, bold: true });
+      h += M(85, 228, 20, 'z', ramp(a, 0, 0.3), { bold: true }) + txt(85, 247, 13, 'a vector in', ramp(a, 0, 0.3), { muted: true }) + txt(85, 263, 13, 'every cell', ramp(a, 0, 0.3), { muted: true });
 
       // ---- step 2: a and b ----
       const arr = ramp(b, 0, 0.25), grow = ramp(b, 0.15, 0.4), gp = ramp(b, 0.55, 0.85);
@@ -139,7 +141,7 @@ const make = (mode) => (s) => ({
       h += arrowTo(`M${Z.x + N * CELL + 6} 200 C 185 200, 180 295, ${GB.x - 12} 295`, GB.x - 4, 295, arr);
       h += grid(GA, (r, cc) => acol(gated(AR, GAa, r, cc, gp)), grow);
       h += grid(GB, (r, cc) => bcol(gated(BRW, GBb, r, cc, gp)), grow);
-      h += txt(GA.x + (N * CELL) / 2, 18, 19, 'a', grow, { bold: true }) + txt(GB.x + (N * CELL) / 2, 364, 19, 'b', grow, { bold: true });
+      h += M(GA.x + (N * CELL) / 2, 18, 19, 'a', grow, { bold: true }) + M(GB.x + (N * CELL) / 2, 364, 19, 'b', grow, { bold: true });
       const side = (1 - ramp(c, 0.1, 0.3));
       h += txt(335, 66, 13, 'linear projection', ramp(b, 0.3, 0.5) * side, { muted: true, anchor: 'start' }) + txt(335, 84, 13, 'times a gate', ramp(b, 0.5, 0.7) * side, { muted: true, anchor: 'start' });
       h += txt(335, 276, 13, 'linear projection', ramp(b, 0.3, 0.5) * side, { muted: true, anchor: 'start' }) + txt(335, 294, 13, 'times a gate', ramp(b, 0.5, 0.7) * side, { muted: true, anchor: 'start' });
@@ -165,28 +167,28 @@ const make = (mode) => (s) => ({
         }
         p += txt(SX(k), 20, 13, String(k), ramp(c, 0.5, 0.7), { muted: true });
       }
-      p += txt(488, 20, 13, 'k', ramp(c, 0.5, 0.7), { muted: true, anchor: 'end' });
-      p += `<text x="738" y="${A_Y + SH / 2}" font-size="14" class="og-t" text-anchor="start" opacity="${ramp(c, 0.6, 0.8).toFixed(2)}">${inc ? 'column' : 'row'} i of a</text>`
-        + `<text x="738" y="${B_Y + SH / 2}" font-size="14" class="og-t" text-anchor="start" opacity="${ramp(c, 0.6, 0.8).toFixed(2)}">${inc ? 'column' : 'row'} j of b</text>`;
+      p += M(488, 20, 13, 'k', ramp(c, 0.5, 0.7), { muted: true, anchor: 'end' });
+      p += R(738, A_Y + SH / 2, 14, `${inc ? 'column' : 'row'} $i$ of $a$`, ramp(c, 0.6, 0.8), { anchor: 'start' })
+        + R(738, B_Y + SH / 2, 14, `${inc ? 'column' : 'row'} $j$ of $b$`, ramp(c, 0.6, 0.8), { anchor: 'start' });
 
       // ---- step 4: multiply, entry by entry ----
       const rule = ramp(d, 0, 0.1);
-      p += txt(488, (A_Y + B_Y + SH) / 2, 22, '×', rule) + `<g opacity="${rule.toFixed(2)}"><path d="M496 ${RULE_Y} H${SX(N - 1) + SW / 2 + 4}" stroke="var(--fg)" stroke-width="2"/></g>`;
+      p += M(488, (A_Y + B_Y + SH) / 2, 22, '\\times', rule) + `<g opacity="${rule.toFixed(2)}"><path d="M496 ${RULE_Y} H${SX(N - 1) + SW / 2 + 4}" stroke="var(--fg)" stroke-width="2"/></g>`;
       for (let k = 0; k < N; k++) {
         const t0 = 0.12 + 0.15 * k, pt = ramp(d, t0, t0 + 0.15), pulse = ramp(d, t0 - 0.02, t0 + 0.03) * (1 - ramp(d, t0 + 0.12, t0 + 0.17));
         p += rect(SX(k) - SW / 2 - 2, A_Y - 2, SW + 4, SH + 4, 'none', 'var(--accent)', 3, pulse) + rect(SX(k) - SW / 2 - 2, B_Y - 2, SW + 4, SH + 4, 'none', 'var(--accent)', 3, pulse);
         p += cell(SX(k) - SW / 2, P_Y, P_BG, PV[k], P_BAR, pt, pt);
       }
-      p += `<text x="738" y="${P_Y + SH / 2}" font-size="14" class="og-t" text-anchor="start" opacity="${ramp(d, 0.1, 0.25).toFixed(2)}">a<tspan dy="4" font-size="75%">${inc ? 'ki' : 'ik'}</tspan><tspan dy="-4"> × b</tspan><tspan dy="4" font-size="75%">${inc ? 'kj' : 'jk'}</tspan></text>`;
+      p += M(738, P_Y + SH / 2, 14, inc ? 'a_{ki} \\times b_{kj}' : 'a_{ik} \\times b_{jk}', ramp(d, 0.1, 0.25), { anchor: 'start' });
 
       // ---- step 5: the sum over k, and then the update of z_ij ----
       const lines = ramp(e, 0, 0.15), sum = ramp(e, 0.1, 0.25), sumGrow = ramp(e, 0.2, 0.45);
       for (let k = 0; k < N; k++) p += `<g opacity="${lines.toFixed(2)}"><path d="M${SX(k)} ${P_Y + SH + 3} L${S_CX} ${S_Y - 3}" stroke="var(--muted)" stroke-width="1.5"/></g>`;
-      p += cell(S_CX - SW / 2, S_Y, S_BG, SN, S_BAR, sum, sumGrow) + txt(S_CX - SW / 2 - 8, S_Y + SH / 2, 14, 'sum over k', sum, { anchor: 'end' });
+      p += cell(S_CX - SW / 2, S_Y, S_BG, SN, S_BAR, sum, sumGrow) + R(S_CX - SW / 2 - 8, S_Y + SH / 2, 14, 'sum over $k$', sum, { anchor: 'end' });
       const o = ramp(e, 0.45, 0.6);
       h += `<g opacity="${(1 - 0.7 * ramp(f, 0, 0.1)).toFixed(2)}">${p}`
         + `${arrowTo(`M${OUT[0][0]} ${OUT[0][1]} C ${OUT[1][0]} ${OUT[1][1]}, ${OUT[2][0]} ${OUT[2][1]}, ${OUT[3][0]} ${OUT[3][1]}`, O.x - 2, 138, o)}`
-        + txt(745, 247, 13.5, 'layer norm, linear,', ramp(e, 0.5, 0.65), { muted: true }) + txt(745, 263, 13.5, 'then × a gate from z_ij'.replace('z_ij', 'z<tspan dy="4" font-size="75%">ij</tspan>'), ramp(e, 0.55, 0.7), { muted: true }) + `</g>`;
+        + txt(745, 247, 13.5, 'layer norm, linear,', ramp(e, 0.5, 0.65), { muted: true }) + R(745, 263, 13.5, 'then $\\times$ a gate from $z_{ij}$', ramp(e, 0.55, 0.7), { muted: true }) + `</g>`;
 
       // ---- the update: empty at first, then z_ij, then every entry in turn ----
       const ou = ramp(e, 0.3, 0.45);
@@ -196,7 +198,7 @@ const make = (mode) => (s) => ({
       }, ou);
       h += rect(O.x + J * CELL, O.y + I * CELL, CELL, CELL, 'none', 'var(--accent)', 3, ramp(e, 0.5, 0.6) * (1 - ramp(f, 0.04, 0.1)));
       if (f > 0.04 && f < 0.97) h += rect(O.x + sw[1] * CELL, O.y + sw[0] * CELL, CELL, CELL, 'none', 'var(--accent)', 3, 1);
-      h += txt(O.x + (N * CELL) / 2, 228, 16, 'the update', ou, { bold: true }) + txt(O.x + (N * CELL) / 2, 247, 13, 'added to z', ramp(f, 0.9, 1), { muted: true });
+      h += txt(O.x + (N * CELL) / 2, 228, 16, 'the update', ou, { bold: true }) + R(O.x + (N * CELL) / 2, 247, 13, 'added to $z$', ramp(f, 0.9, 1), { muted: true });
       // the sum travels into z_ij
       const tr = ramp(e, 0.6, 0.85);
       if (tr > 0 && tr < 1) { const [qx, qy] = along(PATH, tr); h += rect(qx - CELL / 2, qy - CELL / 2, CELL, CELL, ocol(OV[I][J]), LINE, 1); }
@@ -205,7 +207,7 @@ const make = (mode) => (s) => ({
 
     frame.innerHTML = `<h2 class="deck-heading">${esc(AF3.plain(title.paras[0]))}</h2>
       <div class="og-wrap"><svg viewBox="0 0 1000 395" role="img" aria-label="The ${inc ? 'incoming' : 'outgoing'} triangle update: z is projected into a and b; for the entry z_ij, ${inc ? 'column i of a and column j of b' : 'row i of a and row j of b'} are multiplied entry by entry and summed over k; the result becomes the update of z_ij; the same is done for every pair i, j"></svg></div>
-      <div class="og-caps">${CAPTIONS[mode].map((t, i) => `<p class="og-cap reveal-in" data-show="${i + 1}">${esc(t).replace(/([zab])_([a-z]{2})/g, '$1<sub>$2</sub>')}</p>`).join('')}</div>
+      <div class="og-caps">${CAPTIONS[mode].map((t, i) => `<p class="og-cap reveal-in" data-show="${i + 1}">${AF3.rich(t, esc)}</p>`).join('')}</div>
       ${AF3.arch.mini(s.n, AF3.plain(title.paras[0]).length)}`;
     const svg = frame.querySelector('svg');
 

@@ -41,10 +41,10 @@ const Z0 = { x: 486, y: 100, c: 28 }, CP0 = { x: 596, y: 100, c: 11 }, P0 = { x:
 const tokStart = [0, 3, 7];
 
 const CAPTIONS = [
-  'The atom encoder works on atoms, but s and z live on tokens. Each atom knows its token (the colour). c starts from the reference conformer of each atom: its element, charge and position.',
-  'Single: each token’s vector is copied to all of its atoms. A layer norm and a linear layer change it to the atom size (384 to 128 numbers), and it is added to c.',
-  'Pair: each pair of tokens’ vector is copied to every pair of their atoms, changed by a layer norm and a linear layer (128 to 16 numbers) and added to p, which by itself links only atoms of the same residue.',
-  'c conditions every block of the atom transformer, p biases its attention, and q, which starts as the original c, gets the noisy positions added.',
+  'The atom encoder works on atoms, but $s$ and $z$ live on tokens. Each atom knows its token (the colour). $c$ starts from the reference conformer of each atom: its element, charge and position.',
+  'Single: each token’s vector is copied to all of its atoms. A layer norm and a linear layer change it to the atom size (384 to 128 numbers), and it is added to $c$.',
+  'Pair: each pair of tokens’ vector is copied to every pair of their atoms, changed by a layer norm and a linear layer (128 to 16 numbers) and added to $p$, which by itself links only atoms of the same residue.',
+  '$c$ conditions every block of the atom transformer, $p$ biases its attention, and $q$, which starts as the original $c$, gets the noisy positions added.',
 ];
 
 AF3.kinds.condatom = (s) => ({
@@ -76,7 +76,8 @@ AF3.kinds.condatom = (s) => ({
     }));
 
     // ---- helpers ----
-    const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : `<text x="${x}" y="${y}" font-size="${size}" class="ca-t${o.muted ? ' muted' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''}${o.fill ? ` style="fill:${o.fill}"` : ''} opacity="${op.toFixed(2)}">${str}</text>`;
+    const mtxt = (x, y, size, str, op, o = {}) => AF3.svgRich(x, y, size, str, { ...o, op });   // a label with math: KaTeX between dollar signs
+    const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : String(str).includes('$') ? mtxt(x, y, size, str, op, { ...o, color: o.fill || o.color }) : `<text x="${x}" y="${y}" font-size="${size}" class="ca-t${o.muted ? ' muted' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''}${o.fill ? ` style="fill:${o.fill}"` : ''} opacity="${op.toFixed(2)}">${str}</text>`;
     const rect = (x, y, w, h, fill, stroke, sw, op = 1, rx = 0) => op < 0.01 ? '' : `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}"${rx ? ` rx="${rx}"` : ''} fill="${fill}" stroke="${stroke}" stroke-width="${sw}" opacity="${op.toFixed(2)}"/>`;
     const bars = (x, y, w, h, vals, col) => {
       const bh = 4, gap = 1.8, y0 = y + (h - (3 * bh + 2 * gap)) / 2;
@@ -120,9 +121,9 @@ AF3.kinds.condatom = (s) => ({
         h += rect(S_X, tokY(t) + 1, CWID, tokH(t) - 2, TOK[t], LINE, 1, o1) + (o1 > 0.01 ? `<g opacity="${o1.toFixed(2)}">${bars(S_X, tokY(t) + 1 + (tokH(t) - 2) / 2 - 12, CWID, 24, SV[t], TOKD[t])}</g>` : '');
         h += txt(S_X - 8, tokY(t) + tokH(t) / 2, 12.5, `token ${t}`, o1, { anchor: 'end', muted: true });
       }
-      h += txt(S_X + CWID / 2, Y0 + NA * AH + 14, 13, 's', o1, { bold: true }) + txt(S_X + CWID / 2, Y0 + NA * AH + 29, 12, 'one vector per token', o1, { muted: true });
+      h += txt(S_X + CWID / 2, Y0 + NA * AH + 14, 15, '$s$', o1) + txt(S_X + CWID / 2, Y0 + NA * AH + 29, 12, 'one vector per token', o1, { muted: true });
       h += atomCol(C_X, (aa) => Q_LIGHT, (aa) => CV[aa], Q_DEEP, o2, true);
-      h += txt(C_X + CWID / 2, Y0 + NA * AH + 14, 13, 'c', o2, { bold: true }) + txt(C_X + CWID / 2, Y0 + NA * AH + 29, 12, 'from the reference', o2, { muted: true }) + txt(C_X + CWID / 2, Y0 + NA * AH + 43, 12, 'conformer', o2, { muted: true });
+      h += txt(C_X + CWID / 2, Y0 + NA * AH + 14, 15, '$c$', o2) + txt(C_X + CWID / 2, Y0 + NA * AH + 29, 12, 'from the reference', o2, { muted: true }) + txt(C_X + CWID / 2, Y0 + NA * AH + 43, 12, 'conformer', o2, { muted: true });
       h += txt(C_X + CWID / 2, Y0 - 12, 12, 'atoms', o2, { muted: true });
 
       // ---- step 2: the single vectors are copied to the atoms, changed, added to c ----
@@ -137,9 +138,9 @@ AF3.kinds.condatom = (s) => ({
       }
       h += txt(COPY_X + CWID / 2, Y0 + NA * AH + 14, 13, 'copied to atoms', ramp(b, 0.3, 0.55), { bold: true }) + txt(COPY_X + CWID / 2, Y0 + NA * AH + 29, 12, 'layer norm, linear', lin, { muted: true });
       h += arrow(S_X + CWID + 8, Y0 + 100, COPY_X - 8, Y0 + 100, ramp(b, 0, 0.2) * (1 - ramp(b, 0.3, 0.45)));
-      h += txt(238, Y0 + 94, 20, '+', add, { bold: true }) + txt(354, Y0 + 94, 20, '=', add, { bold: true });
+      h += txt(238, Y0 + 94, 22, '$+$', add) + txt(354, Y0 + 94, 22, '$=$', add);
       h += atomCol(CN_X, () => Q_LIGHT, (aa) => CNV[aa], Q_DEEP, add, false);
-      h += txt(CN_X + CWID / 2, Y0 + NA * AH + 14, 13, 'c', add, { bold: true }) + txt(CN_X + CWID / 2, Y0 + NA * AH + 29, 12, 'conditioned', add, { muted: true });
+      h += txt(CN_X + CWID / 2, Y0 + NA * AH + 14, 15, '$c$', add) + txt(CN_X + CWID / 2, Y0 + NA * AH + 29, 12, 'conditioned', add, { muted: true });
 
       // ---- step 3: the pair vectors are copied to the atom pairs, changed, added to p ----
       const zt = ramp(c, 0, 0.25);
@@ -148,7 +149,7 @@ AF3.kinds.condatom = (s) => ({
         let zg = '';
         for (let t = 0; t < NT; t++) for (let u = 0; u < NT; u++) zg += `<rect x="${Z0.x + u * Z0.c}" y="${Z0.y + t * Z0.c}" width="${Z0.c}" height="${Z0.c}" fill="${zcol(t, u)}" stroke="${LINE}" stroke-width="1"/>`;
         for (let t = 0; t < NT; t++) zg += `<rect x="${Z0.x - 7}" y="${Z0.y + t * Z0.c + 2}" width="4" height="${Z0.c - 4}" fill="${TOKD[t]}"/><rect x="${Z0.x + t * Z0.c + 2}" y="${Z0.y - 8}" width="${Z0.c - 4}" height="4" fill="${TOKD[t]}"/>`;
-        h += `<g opacity="${zt.toFixed(2)}">${zg}</g>` + txt(Z0.x + (NT * Z0.c) / 2, Z0.y + NT * Z0.c + 18, 13, 'z', zt, { bold: true }) + txt(Z0.x + (NT * Z0.c) / 2, Z0.y + NT * Z0.c + 33, 12, 'one vector per', zt, { muted: true }) + txt(Z0.x + (NT * Z0.c) / 2, Z0.y + NT * Z0.c + 47, 12, 'token pair', zt, { muted: true });
+        h += `<g opacity="${zt.toFixed(2)}">${zg}</g>` + txt(Z0.x + (NT * Z0.c) / 2, Z0.y + NT * Z0.c + 18, 15, '$z$', zt) + txt(Z0.x + (NT * Z0.c) / 2, Z0.y + NT * Z0.c + 33, 12, 'one vector per', zt, { muted: true }) + txt(Z0.x + (NT * Z0.c) / 2, Z0.y + NT * Z0.c + 47, 12, 'token pair', zt, { muted: true });
       }
       const cp = ramp(c, 0.25, 0.55), linp = ramp(c, 0.55, 0.75);
       h += arrow(Z0.x + NT * Z0.c + 8, Z0.y + 42, CP0.x - 8, Z0.y + 42, ramp(c, 0.2, 0.4) * (1 - ramp(c, 0.5, 0.6)));
@@ -156,17 +157,17 @@ AF3.kinds.condatom = (s) => ({
       h += txt(CP0.x + (NA * CP0.c) / 2, CP0.y + NA * CP0.c + 18, 13, 'copied to atom pairs', cp, { bold: true }) + txt(CP0.x + (NA * CP0.c) / 2, CP0.y + NA * CP0.c + 33, 12, 'layer norm, linear', linp, { muted: true });
       const p0 = ramp(c, 0.5, 0.8), add3 = ramp(c, 0.78, 1);
       h += pgrid(P0, (l, m) => (P0V[l][m] < 0.01 ? 'var(--bg)' : lerpColor(P_LIGHT, P_DEEP, P0V[l][m])), p0);
-      h += txt(P0.x + (NA * P0.c) / 2, P0.y + NA * P0.c + 18, 13, 'p', p0, { bold: true }) + txt(P0.x + (NA * P0.c) / 2, P0.y + NA * P0.c + 33, 12, 'reference conformer,', p0, { muted: true }) + txt(P0.x + (NA * P0.c) / 2, P0.y + NA * P0.c + 47, 12, 'same residue only', p0, { muted: true });
-      h += txt(708, Z0.y + 50, 20, '+', add3, { bold: true }) + txt(832, Z0.y + 50, 20, '=', add3, { bold: true });
+      h += txt(P0.x + (NA * P0.c) / 2, P0.y + NA * P0.c + 18, 15, '$p$', p0) + txt(P0.x + (NA * P0.c) / 2, P0.y + NA * P0.c + 33, 12, 'reference conformer,', p0, { muted: true }) + txt(P0.x + (NA * P0.c) / 2, P0.y + NA * P0.c + 47, 12, 'same residue only', p0, { muted: true });
+      h += txt(708, Z0.y + 50, 22, '$+$', add3) + txt(832, Z0.y + 50, 22, '$=$', add3);
       h += pgrid(PN0, (l, m) => lerpColor(lerpColor(P_LIGHT, P_DEEP, P0V[l][m]), shade(zcol(TOKEN_OF[l], TOKEN_OF[m]), -0.1), P0V[l][m] > 0.01 ? 0.35 : 0.8), add3);
-      h += txt(PN0.x + (NA * PN0.c) / 2, PN0.y + NA * PN0.c + 18, 13, 'p', add3, { bold: true }) + txt(PN0.x + (NA * PN0.c) / 2, PN0.y + NA * PN0.c + 33, 12, 'conditioned', add3, { muted: true });
+      h += txt(PN0.x + (NA * PN0.c) / 2, PN0.y + NA * PN0.c + 18, 15, '$p$', add3) + txt(PN0.x + (NA * PN0.c) / 2, PN0.y + NA * PN0.c + 33, 12, 'conditioned', add3, { muted: true });
 
       // ---- step 4: where c and p go ----
       const by = 322, bo = ramp(d, 0, 0.35);
       const chip = (x, w, head, sub, op) => rect(x, by, w, 46, 'var(--bg)', 'var(--muted)', 1.6, op, 10) + txt(x + w / 2, by + 16, 14, head, op, { bold: true }) + txt(x + w / 2, by + 34, 12, sub, op, { muted: true });
-      h += chip(30, 250, 'c: conditions every block', 'of the atom transformer', ramp(d, 0, 0.3));
-      h += chip(296, 250, 'p: biases the attention', 'between nearby atoms', ramp(d, 0.15, 0.45));
-      h += chip(562, 250, 'q: starts as the original c', 'plus the noisy positions r', ramp(d, 0.3, 0.6));
+      h += chip(30, 250, '$c$: conditions every block', 'of the atom transformer', ramp(d, 0, 0.3));
+      h += chip(296, 250, '$p$: biases the attention', 'between nearby atoms', ramp(d, 0.15, 0.45));
+      h += chip(562, 250, '$q$: starts as the original $c$', 'plus the noisy positions $r$', ramp(d, 0.3, 0.6));
       h += arrow(818, by + 23, 842, by + 23, ramp(d, 0.55, 0.75));
       const tb = ramp(d, 0.65, 0.95);
       h += rect(848, by, 142, 46, 'color-mix(in srgb, var(--accent) 9%, var(--bg))', 'var(--accent)', 2, tb, 10) + txt(919, by + 16, 14, 'Atom transformer', tb, { bold: true }) + txt(919, by + 34, 12, '3 blocks, 4 heads', tb, { muted: true });
@@ -176,7 +177,7 @@ AF3.kinds.condatom = (s) => ({
 
     frame.innerHTML = `<h2 class="deck-heading">${esc(heading)}</h2>
       <div class="ca-wrap"><svg viewBox="0 0 1000 380" role="img" aria-label="How token-level conditioning reaches the atoms: the vector of each token is copied to its atoms, changed by a layer norm and a linear layer and added to c; the vector of each pair of tokens is copied to every pair of their atoms, changed and added to p, which from the reference conformer alone only links atoms of the same residue; c, p and q go into the atom transformer"></svg></div>
-      <div class="ca-caps">${CAPTIONS.map((t, i) => `<p class="ca-cap reveal-in" data-show="${i + 1}">${esc(t)}</p>`).join('')}</div>
+      <div class="ca-caps">${CAPTIONS.map((t, i) => `<p class="ca-cap reveal-in" data-show="${i + 1}">${AF3.rich(t, esc)}</p>`).join('')}</div>
       ${AF3.arch.mini(s.n, heading.length)}`;
     const svg = frame.querySelector('svg');
 

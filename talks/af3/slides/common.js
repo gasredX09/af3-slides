@@ -57,4 +57,52 @@ window.AF3 = {
     .pp-img img { position: absolute; display: block; }
     .pp-img.plain img { width: 100%; height: 100%; }
     :root[data-theme="dark"] .pp-img { background: #fff; border-radius: .5em; }`,
+  // ---- Math: every symbol, subscript, dimension and formula on a slide is set in KaTeX (vendor/katex, from disk), so it looks the
+  // same everywhere ($z_{ij}$ in a caption, a label in a drawing, the equation slides). Words, numbers on their own and the names of
+  // metrics (pLDDT, PAE, DockQ) stay plain text.
+  //   AF3.tex(src, display)        KaTeX HTML for one formula, cached (inline sets .af3-tex so it matches the surrounding text)
+  //   AF3.rich(str, esc)           HTML for a string with math between dollar signs: the rest is escaped with esc ("the $z_{ij}$ edge")
+  //   AF3.svgMath(x, y, size, src, o)  a formula at (x, y) inside an SVG, centred on y; AF3.svgRich(...) the same for a string with $...$
+  //       o: anchor 'middle' (default) | 'start' | 'end', op (opacity, nothing drawn below .01), muted, accent, color, bold, w (box width)
+  //   AF3.foAttrs(x, y, size, o) + AF3.foInner(html, size, o): the same pieces apart, for a helper that builds its own element
+  //       (conformer.js: reg('foreignObject', AF3.foAttrs(...), comp, a, b, AF3.foInner(...)))
+  _tex: new Map(),
+  tex(src, display = false) {
+    const key = (display ? 'D' : 'I') + src;
+    let h = AF3._tex.get(key);
+    if (h === undefined) {
+      h = katex.renderToString(src, { displayMode: display, throwOnError: false, strict: 'ignore', trust: true, output: 'html' });
+      if (!display) h = `<span class="af3-tex">${h}</span>`;
+      AF3._tex.set(key, h);
+    }
+    return h;
+  },
+  rich(str, esc) {
+    return String(str).split('$').map((part, i, all) => (i % 2 === 1 && i < all.length - 1 ? AF3.tex(part) : esc(i % 2 === 1 ? '$' + part : part))).join('');
+  },
+  foAttrs(x, y, size, o = {}) {
+    const w = o.w || 420, h = Math.ceil(size * 3), a = o.anchor || 'middle';
+    const x0 = a === 'start' ? x : a === 'end' ? x - w : x - w / 2;
+    return `x="${x0.toFixed(1)}" y="${(y - h / 2).toFixed(1)}" width="${w}" height="${h}" style="overflow:visible;pointer-events:none"`;
+  },
+  foInner(html, size, o = {}) {
+    const a = o.anchor || 'middle', jc = a === 'start' ? 'flex-start' : a === 'end' ? 'flex-end' : 'center';
+    const color = o.color || (o.muted ? 'var(--muted)' : o.accent ? 'var(--accent)' : 'var(--fg)');
+    return `<div class="af3-m" style="font-size:${size}px;justify-content:${jc};color:${color}${o.bold ? ';font-weight:700' : ''}"><span>${html}</span></div>`;   // the span keeps the spaces next to a formula (flex items lose edge whitespace)
+  },
+  svgRich(x, y, size, str, o = {}) {
+    const op = o.op === undefined ? 1 : o.op;
+    if (op < 0.01) return '';
+    return `<foreignObject ${AF3.foAttrs(x, y, size, o)} opacity="${op.toFixed(2)}">${AF3.foInner(AF3.rich(str, (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')), size, o)}</foreignObject>`;
+  },
+  svgMath(x, y, size, src, o = {}) {
+    const op = o.op === undefined ? 1 : o.op;
+    if (op < 0.01) return '';
+    return `<foreignObject ${AF3.foAttrs(x, y, size, o)} opacity="${op.toFixed(2)}">${AF3.foInner(AF3.tex(o.bold ? `\\boldsymbol{${src}}` : src), size, o)}</foreignObject>`;
+  },
+  mathCss: `
+    .af3-tex .katex, .af3-m .katex { font-size: 1.1em; }
+    .af3-tex { white-space: nowrap; }   /* a formula in a caption never breaks across two lines */
+    .af3-m { display: flex; align-items: center; height: 100%; white-space: nowrap; line-height: 1; font-family: Lato, "Helvetica Neue", Arial, sans-serif; }`,
 };
+document.head.append(Object.assign(document.createElement('style'), { textContent: AF3.mathCss }));

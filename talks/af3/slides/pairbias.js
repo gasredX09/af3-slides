@@ -70,13 +70,13 @@ const ORESV = ORAWV.map((v, i) => v * GV[i]);
 const HEADV = [ORESV, [0.6, 0.3, 0.8], null, [0.8, 0.6, 0.2]];
 
 const CAPTIONS = [
-  'We update token i in s. Row i of z holds a vector for each pair of token i with a token j.',
-  's_i gives a query and a gate. Every token j gives a key and a value. Row i of z gives one number for every j, a bias.',
-  'Compare the query with every key to get a score for each token j. Then add the bias b_ij from z_ij: this is where z steers s.',
-  'A softmax turns the scores into weights that add up to 1: how much token i looks at each token j.',
+  'We update token $i$ in $s$. Row $i$ of $z$ holds a vector for each pair of token $i$ with a token $j$.',
+  '$s_i$ gives a query and a gate. Every token $j$ gives a key and a value. Row $i$ of $z$ gives one number for every $j$, a bias.',
+  'Compare the query with every key to get a score for each token $j$. Then add the bias $b_{ij}$ from $z_{ij}$: this is where $z$ steers $s$.',
+  'A softmax turns the scores into weights that add up to 1: how much token $i$ looks at each token $j$.',
   'Take the weighted sum of the values, then multiply by the gate.',
-  'This runs in 16 heads side by side. Their results are joined and passed through a linear layer, which gives the update for token i.',
-  'The same is done for every token i, each time with row i of z as the bias. The result is added to s.',
+  'This runs in 16 heads side by side. Their results are joined and passed through a linear layer, which gives the update for token $i$.',
+  'The same is done for every token $i$, each time with row $i$ of $z$ as the bias. The result is added to $s$.',
 ];
 
 AF3.kinds.pairbias = (s) => ({
@@ -90,7 +90,7 @@ AF3.kinds.pairbias = (s) => ({
       .pb-t.muted { fill: var(--muted); }
       .pb-caps { position: absolute; left: 4.2%; right: 4.2%; top: 82.5%; height: 10.5%; }
       .pb-cap { position: absolute; left: 0; right: 0; top: 0; margin: 0; font-size: var(--t-small); line-height: 1.3; font-weight: 600; }
-      .pb-cap sub { font-size: .7em; }
+      .pb-cap .af3-tex { white-space: nowrap; }   /* a formula never breaks across two lines */
     `);
     const title = AF3.texts(s).find((t) => t.ph === 'title');
 
@@ -103,8 +103,9 @@ AF3.kinds.pairbias = (s) => ({
     const zcol = (r, c) => shade(BLUE, (ZV[r][c] - 0.5) * 0.35);
     const scol = (k) => shade(VIOLET, (SV[k] - 0.5) * 0.35);
     const ocol = (v) => lerpColor(O_LIGHT, O_DEEP, v);
-    const sub2 = (str) => str.replace(/([zqkbvgs])_([a-z]{1,2})/g, '$1<tspan dy="4" font-size="75%">$2</tspan><tspan dy="-4"></tspan>');
     const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : `<text x="${x}" y="${y}" font-size="${size}" class="pb-t${o.muted ? ' muted' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''}${o.fill ? ` style="fill:${o.fill}"` : ''} opacity="${op.toFixed(2)}">${str}</text>`;
+    const M = (x, y, size, src, op, o = {}) => AF3.svgMath(x, y, size, src, { ...o, op });      // a symbol or formula, set in KaTeX
+    const R = (x, y, size, str, op, o = {}) => AF3.svgRich(x, y, size, str, { ...o, op });      // words with $math$ in them
     const rect = (x, y, w, h, fill, stroke, sw, op = 1) => op < 0.01 ? '' : `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" opacity="${op.toFixed(2)}"/>`;
     const grid = (g0, col, op) => {
       let h = '';
@@ -134,8 +135,8 @@ AF3.kinds.pairbias = (s) => ({
     };
     const sRect = (k) => [S.x + k * CELL, S.y, CELL, SH_S];
     const zRect = (r, c) => [Z.x + c * CELL, Z.y + r * CELL, CELL, CELL];
-    const rowLabel = (y, html, op) => txt(642, y, 14, html, op, { anchor: 'start' });
-    const RI = `<tspan style="fill:${CI}" font-weight="700">row i</tspan>`;
+    const rowLabel = (y, html, op) => op < 0.01 ? '' : `<foreignObject ${AF3.foAttrs(642, y, 14, { anchor: 'start', w: 340 })} opacity="${op.toFixed(2)}">${AF3.foInner(html, 14, { anchor: 'start' })}</foreignObject>`;
+    const RI = `<span style="color:${CI};font-weight:700">row ${AF3.tex('\\boldsymbol{i}')}</span>`;   // "row i" in the colour of token i
 
     const draw = (st) => {
       let h = '';
@@ -148,10 +149,10 @@ AF3.kinds.pairbias = (s) => ({
       h += strip(S, scol, ramp(a, 0, 0.3)) + grid(Z, (r, cc) => zcol(r, cc), ramp(a, 0, 0.3));
       h += rect(S.x + ti * CELL - 1.5, S.y - 1.5, CELL + 3, SH_S + 3, 'none', CI, 3, rowOp);
       h += rect(Z.x - 1.5, Z.y + ti * CELL - 1.5, N * CELL + 3, CELL + 3, 'none', CI, 3, rowOp);
-      h += txt(S.x - 8, S.y + SH_S / 2, 14, 'token i', rowOp, { anchor: 'end', bold: true, fill: CI }) + txt(Z.x - 8, Z.y + ti * CELL + CELL / 2, 14, 'row i', rowOp, { anchor: 'end', bold: true, fill: CI });
-      h += txt(Z.x + N * CELL + 8, Z.y + ti * CELL + CELL / 2, 15, sub2('z_ij'), ramp(a, 0.4, 0.65) * (1 - ramp(b, 0.3, 0.5) * (1 - ramp(g, 0, 0.05))), { anchor: 'start', bold: true, fill: 'var(--accent)' });
-      h += txt(S.x + (N * CELL) / 2, 20, 20, 's', ramp(a, 0, 0.3), { bold: true }) + txt(S.x + (N * CELL) / 2, 84, 13, 'a vector per token', ramp(a, 0, 0.3), { muted: true });
-      h += txt(Z.x + (N * CELL) / 2, 240, 20, 'z', ramp(a, 0, 0.3), { bold: true }) + txt(Z.x + (N * CELL) / 2, 259, 13, 'a vector for', ramp(a, 0, 0.3), { muted: true }) + txt(Z.x + (N * CELL) / 2, 275, 13, 'each pair', ramp(a, 0, 0.3), { muted: true });
+      h += R(S.x - 8, S.y + SH_S / 2, 14, 'token $\\boldsymbol{i}$', rowOp, { anchor: 'end', bold: true, color: CI }) + R(Z.x - 8, Z.y + ti * CELL + CELL / 2, 14, 'row $\\boldsymbol{i}$', rowOp, { anchor: 'end', bold: true, color: CI });
+      h += M(Z.x + N * CELL + 8, Z.y + ti * CELL + CELL / 2, 15, 'z_{ij}', ramp(a, 0.4, 0.65) * (1 - ramp(b, 0.3, 0.5) * (1 - ramp(g, 0, 0.05))), { anchor: 'start', bold: true, accent: true });
+      h += M(S.x + (N * CELL) / 2, 20, 20, 's', ramp(a, 0, 0.3), { bold: true }) + txt(S.x + (N * CELL) / 2, 84, 13, 'a vector per token', ramp(a, 0, 0.3), { muted: true });
+      h += M(Z.x + (N * CELL) / 2, 240, 20, 'z', ramp(a, 0, 0.3), { bold: true }) + txt(Z.x + (N * CELL) / 2, 259, 13, 'a vector for', ramp(a, 0, 0.3), { muted: true }) + txt(Z.x + (N * CELL) / 2, 275, 13, 'each pair', ramp(a, 0, 0.3), { muted: true });
 
       // ---- step 2: the projections (copies of cells fly to their place and become a key, a value, a bias, a query, a gate) ----
       let p = '';
@@ -164,10 +165,10 @@ AF3.kinds.pairbias = (s) => ({
         p += fly(zRect(I, k), [SX(k) - SW / 2, BIAS_Y, SW, SB], ramp(b, 0.4 + 0.05 * k, 0.7 + 0.05 * k), zcol(I, k), SC_BG, (r) => sbar(r[0] + 3, r[1], BIAS[k], B_BAR));
         p += txt(SX(k), 20, 13, String(k), ramp(b, 0.1, 0.3), { muted: true });
       }
-      p += txt(380, 20, 13, 'j', ramp(b, 0.1, 0.3), { muted: true, anchor: 'end' });
-      p += txt(266, Q[1] + SH / 2, 15, sub2('q_i'), ramp(b, 0.3, 0.5), { anchor: 'end', bold: true }) + txt(Q[0] + SW / 2, 76, 13, 'query', ramp(b, 0.35, 0.55), { muted: true });
-      p += txt(266, G[1] + SH / 2, 15, sub2('g_i'), ramp(b, 0.3, 0.5) * (1 - ramp(e, 0.45, 0.55)), { anchor: 'end', bold: true }) + txt(G[0] + SW / 2, 310, 13, 'gate', ramp(b, 0.35, 0.55) * (1 - ramp(e, 0.45, 0.55)), { muted: true });
-      p += rowLabel(KEY_Y + SH / 2, 'keys, from s', ramp(b, 0.15, 0.35)) + rowLabel(BIAS_Y + SB / 2, `bias, from ${RI} of z`, ramp(b, 0.45, 0.65)) + rowLabel(VAL_Y + SH / 2, 'values, from s', ramp(b, 0.3, 0.5));
+      p += M(380, 20, 13, 'j', ramp(b, 0.1, 0.3), { muted: true, anchor: 'end' });
+      p += M(266, Q[1] + SH / 2, 15, 'q_i', ramp(b, 0.3, 0.5), { anchor: 'end', bold: true }) + txt(Q[0] + SW / 2, 76, 13, 'query', ramp(b, 0.35, 0.55), { muted: true });
+      p += M(266, G[1] + SH / 2, 15, 'g_i', ramp(b, 0.3, 0.5) * (1 - ramp(e, 0.45, 0.55)), { anchor: 'end', bold: true }) + txt(G[0] + SW / 2, 310, 13, 'gate', ramp(b, 0.35, 0.55) * (1 - ramp(e, 0.45, 0.55)), { muted: true });
+      p += rowLabel(KEY_Y + SH / 2, AF3.rich('keys, from $s$', esc), ramp(b, 0.15, 0.35)) + rowLabel(BIAS_Y + SB / 2, `bias, from ${RI} of ${AF3.tex('z')}`, ramp(b, 0.45, 0.65)) + rowLabel(VAL_Y + SH / 2, AF3.rich('values, from $s$', esc), ramp(b, 0.3, 0.5));
 
       // ---- step 3: the scores, then the bias is added ----
       for (let k = 0; k < N; k++) {
@@ -182,7 +183,7 @@ AF3.kinds.pairbias = (s) => ({
         if (tb > 0.001) p += `<rect x="${lerp(x0 + 3, x0 + 3 + SCORE[k] * U, tb).toFixed(1)}" y="${(lerp(BIAS_Y, TOT_Y, tb) + (SB - 8) / 2).toFixed(1)}" width="${(BIAS[k] * U).toFixed(1)}" height="8" rx="1.5" fill="${B_BAR}"/>`;
       }
       p += rowLabel(SC_Y + SB / 2, 'query · key', ramp(c, 0.05, 0.2)) + rowLabel(TOT_Y + SB / 2, 'score + bias', ramp(c, 0.62, 0.78));
-      p += txt(380, TOT_Y + SB / 2, 18, '+', totOp, { anchor: 'end' });
+      p += M(380, TOT_Y + SB / 2, 18, '+', totOp, { anchor: 'end' });
 
       // ---- step 4: softmax ----
       for (let k = 0; k < N; k++) p += scell(SX(k) - SW / 2, W_Y, W[k] / WM, P_BAR, ramp(d, 0.05 + 0.1 * k, 0.15 + 0.1 * k), ramp(d, 0.05 + 0.1 * k, 0.25 + 0.1 * k));
@@ -194,7 +195,7 @@ AF3.kinds.pairbias = (s) => ({
         p += `<g opacity="${ramp(e, 0.05, 0.25).toFixed(2)}"><path d="M${SX(k)} ${VAL_Y + SH + 1} L${ORAW[0] + SW / 2} ${ORAW[1] - 2}" stroke="var(--accent)" stroke-width="${wid.toFixed(1)}" stroke-linecap="round"/></g>`;
       }
       p += vcell(ORAW, V_BG, ORAWV, V_BAR, ramp(e, 0.25, 0.4), ramp(e, 0.3, 0.45)) + txt(ORAW[0] + SW / 2, 310, 13, 'weighted sum', ramp(e, 0.3, 0.45), { muted: true });
-      p += txt(468, 283, 22, '×', ramp(e, 0.55, 0.65)) + txt(540, 283, 22, '=', ramp(e, 0.7, 0.8));
+      p += M(468, 283, 22, '\\times', ramp(e, 0.55, 0.65)) + M(540, 283, 22, '=', ramp(e, 0.7, 0.8));
       const headMove = ramp(f, 0, 0.2);
       p += vcell(lerpRect(RES, HEAD(0), headMove), V_BG, ORESV, V_BAR, ramp(e, 0.72, 0.9), 1) + txt(RES[0] + SW / 2, 310, 13, 'one head', ramp(e, 0.78, 0.9) * (1 - ramp(f, 0, 0.1)), { muted: true });
 
@@ -215,7 +216,7 @@ AF3.kinds.pairbias = (s) => ({
       }, ou);
       h += rect(U_.x + I * CELL, U_.y, CELL, SH_S, 'none', 'var(--accent)', 3, ramp(f, 0.45, 0.55) * (1 - ramp(g, 0.04, 0.1)));
       if (g > 0.04 && g < 0.97) h += rect(U_.x + ti * CELL, U_.y, CELL, SH_S, 'none', 'var(--accent)', 3, 1);
-      h += txt(U_.x + (N * CELL) / 2, 182, 16, 'the update', ou, { bold: true }) + txt(U_.x + (N * CELL) / 2, 201, 13, 'added to s', ramp(g, 0.9, 1), { muted: true });
+      h += txt(U_.x + (N * CELL) / 2, 182, 16, 'the update', ou, { bold: true }) + R(U_.x + (N * CELL) / 2, 201, 13, 'added to $s$', ramp(g, 0.9, 1), { muted: true });
       const tr = ramp(f, 0.5, 0.78);
       if (tr > 0 && tr < 1) { const [qx, qy] = along(PATH, tr); h += rect(qx - CELL / 2, qy - SH_S / 2, CELL, SH_S, ocol(0.3 + 0.7 * ((I * 0.37 + 0.2) % 1)), LINE, 1); }
       svg.innerHTML = h;
@@ -223,7 +224,7 @@ AF3.kinds.pairbias = (s) => ({
 
     frame.innerHTML = `<h2 class="deck-heading">${esc(AF3.plain(title.paras[0]))}</h2>
       <div class="pb-wrap"><svg viewBox="0 0 1000 395" role="img" aria-label="Attention with pair bias: for token i, a query from s_i is compared with a key for every token j, a bias from row i of z is added, a softmax gives weights, the values are summed with those weights and multiplied by a gate; sixteen heads are joined and projected to the update of token i; the same is done for every token i"></svg></div>
-      <div class="pb-caps">${CAPTIONS.map((t, i) => `<p class="pb-cap reveal-in" data-show="${i + 1}">${esc(t).replace(/([zqkbvgs])_([a-z]{1,2})/g, '$1<sub>$2</sub>')}</p>`).join('')}</div>
+      <div class="pb-caps">${CAPTIONS.map((t, i) => `<p class="pb-cap reveal-in" data-show="${i + 1}">${AF3.rich(t, esc)}</p>`).join('')}</div>
       ${AF3.arch.mini(s.n, AF3.plain(title.paras[0]).length)}`;
     const svg = frame.querySelector('svg');
 

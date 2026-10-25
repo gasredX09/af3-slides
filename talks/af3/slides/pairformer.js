@@ -62,11 +62,11 @@ const along = (pts, t) => {
 };
 
 const CAPTIONS = [
-  'Two tensors go in: the pair representation z, a vector for every pair of tokens, and the single representation s, a vector for every token.',
-  'z is rewritten first, by five pair operations: two triangle updates, two triangle attentions and a transition. The next slides open up the triangle ones.',
-  'Then s is rewritten by attention over the tokens. z biases that attention: z_ij adds a bias to how much token i looks at token j.',
-  'A transition follows on s. Information flows one way: z steers s, but s never writes back into z.',
-  'The block runs 48 times, each time on the result of the one before. The final z and s go on to the diffusion module and the confidence head.',
+  'Two tensors go in: the pair representation $z$, a vector for every pair of tokens, and the single representation $s$, a vector for every token.',
+  '$z$ is rewritten first, by five pair operations: two triangle updates, two triangle attentions and a transition. The next slides open up the triangle ones.',
+  'Then $s$ is rewritten by attention over the tokens. $z$ biases that attention: $z_{ij}$ adds a bias to how much token $i$ looks at token $j$.',
+  'A transition follows on $s$. Information flows one way: $z$ steers $s$, but $s$ never writes back into $z$.',
+  'The block runs 48 times, each time on the result of the one before. The final $z$ and $s$ go on to the diffusion module and the confidence head.',
 ];
 
 AF3.kinds.pairformer = (s) => ({
@@ -81,7 +81,6 @@ AF3.kinds.pairformer = (s) => ({
       .pf-t.ink { fill: ${INK}; }
       .pf-caps { position: absolute; left: 4.2%; right: 4.2%; top: 82.5%; height: 10.5%; }
       .pf-cap { position: absolute; left: 0; right: 0; top: 0; margin: 0; font-size: var(--t-small); line-height: 1.3; font-weight: 600; }
-      .pf-cap sub { font-size: .7em; }
     `);
     const title = AF3.texts(s).find((t) => t.ph === 'title');
 
@@ -98,7 +97,7 @@ AF3.kinds.pairformer = (s) => ({
     // ---- helpers ----
     const mcol = (v) => lerpColor(ORANGE_LIGHT, ORANGE_DEEP, Math.max(0, Math.min(1, (v + 1) / 2)));
     const zcol = (i, j, con) => shade(shade(BLUE, (ZV[i][j] - 0.5) * 0.3), (ZV[i][j] - 0.5) * 0.7 * con);
-    const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : `<text x="${x}" y="${y}" font-size="${size}" class="pf-t${o.muted ? ' muted' : ''}${o.ink ? ' ink' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''} opacity="${op.toFixed(2)}">${str}</text>`;
+    const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : String(str).includes('$') ? AF3.svgRich(x, y, size, str, { ...o, color: o.fill || (o.ink ? INK : undefined), op }) : `<text x="${x}" y="${y}" font-size="${size}" class="pf-t${o.muted ? ' muted' : ''}${o.ink ? ' ink' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''} opacity="${op.toFixed(2)}">${str}</text>`;
     const head = (x, y, dir, c = 'var(--accent)') => {
       const p = { right: [[0, 0], [-10, -5.5], [-10, 5.5]], left: [[0, 0], [10, -5.5], [10, 5.5]], up: [[0, 0], [-5.5, 10], [5.5, 10]], down: [[0, 0], [-5.5, -10], [5.5, -10]] }[dir];
       return `<polygon points="${p.map(([a, b]) => `${(x + a).toFixed(1)},${(y + b).toFixed(1)}`).join(' ')}" fill="${c}"/>`;
@@ -145,10 +144,10 @@ AF3.kinds.pairformer = (s) => ({
       for (let j = 0; j < NT; j++) {
         g += `<g opacity="${o(1)}"><circle cx="${CX(j)}" cy="${DY}" r="${R}" fill="${NODE}" stroke="${j === I ? 'var(--accent)' : LINE}" stroke-width="${j === I ? 3 : 1}"/></g>`;
       }
-      g += txt(CX(I), DY + 1, 12, 'i', op, { ink: true, bold: true });
-      g += txt(394, 197, 14, 'row i of z', op * rowOn, { muted: true, anchor: 'start' });
-      g += `<text x="394" y="226" font-size="14.5" class="pf-t" opacity="${o(txtOn)}">z<tspan dy="4" font-size="75%">ij</tspan><tspan dy="-4"> biases how much</tspan></text>`;
-      g += txt(394, 246, 14.5, 'token i looks at token j', op * txtOn, { anchor: 'start' });
+      g += txt(CX(I), DY + 1, 12, '$i$', op, { ink: true });
+      g += txt(394, 197, 14, 'row $i$ of $z$', op * rowOn, { muted: true, anchor: 'start' });
+      g += txt(394, 226, 14.5, '$z_{ij}$ biases how much', op * txtOn, { anchor: 'start' });
+      g += txt(394, 246, 14.5, 'token $i$ looks at token $j$', op * txtOn, { anchor: 'start' });
       g += txt(394, 266, 14, 'thicker arc: more attention', op * ramp(c, 0.6, 0.72), { muted: true, anchor: 'start' });
       return g;
     };
@@ -191,9 +190,9 @@ AF3.kinds.pairformer = (s) => ({
       h += box(STR.x, STR.y, STR.w, STR.h, ['Tran-', 'sition'], GREEN, ramp(d, 0.12, 0.22) * (1 - ramp(d, 0.5, 0.6)), 13);
 
       // ---- labels ----
-      h += txt(IN_X, 78, 21, 'z', inOp, { bold: true }) + txt(IN_X, 156, 13, 'a vector for', inOp, { muted: true }) + txt(IN_X, 172, 13, 'each pair', inOp, { muted: true }) + txt(IN_X, 188, 13, 'of tokens', inOp, { muted: true });
-      h += txt(IN_X, 266, 21, 's', inOp, { bold: true }) + txt(IN_X, 328, 13, 'a vector for', inOp, { muted: true }) + txt(IN_X, 344, 13, 'each token', inOp, { muted: true });
-      h += txt(OUT_X, 78, 21, 'z', ramp(e, 0.92, 1), { bold: true }) + txt(OUT_X, 266, 21, 's', ramp(e, 0.92, 1), { bold: true });
+      h += txt(IN_X, 78, 21, '$z$', inOp, { bold: true }) + txt(IN_X, 156, 13, 'a vector for', inOp, { muted: true }) + txt(IN_X, 172, 13, 'each pair', inOp, { muted: true }) + txt(IN_X, 188, 13, 'of tokens', inOp, { muted: true });
+      h += txt(IN_X, 266, 21, '$s$', inOp, { bold: true }) + txt(IN_X, 328, 13, 'a vector for', inOp, { muted: true }) + txt(IN_X, 344, 13, 'each token', inOp, { muted: true });
+      h += txt(OUT_X, 78, 21, '$z$', ramp(e, 0.92, 1), { bold: true }) + txt(OUT_X, 266, 21, '$s$', ramp(e, 0.92, 1), { bold: true });
 
       // ---- the laps of the loop (step 5): copies of z and s go round again ----
       for (let k = 0; k < 3; k++) {
@@ -214,14 +213,14 @@ AF3.kinds.pairformer = (s) => ({
       if (one > 0.01) {
         h += `<g opacity="${one.toFixed(2)}">${path(`M380 292 L380 192`, 1, 'var(--muted)', 2.5, '6 5')}${head(380, 178, 'up', 'var(--muted)')}`
           + `<circle cx="380" cy="236" r="12" fill="var(--bg)" stroke="${RED}" stroke-width="2.5"/><path d="M374 230 L386 242 M386 230 L374 242" stroke="${RED}" stroke-width="2.5" stroke-linecap="round"/></g>`
-          + txt(404, 236, 15.5, 's never writes back into z', one, { anchor: 'start' });
+          + txt(404, 236, 15.5, '$s$ never writes back into $z$', one, { anchor: 'start' });
       }
       svg.innerHTML = h;
     };
 
     frame.innerHTML = `<h2 class="deck-heading">${esc(AF3.plain(title.paras[0]))}</h2>
       <div class="pf-wrap"><svg viewBox="0 0 1000 395" role="img" aria-label="Inside the Pairformer: the pair representation goes through two triangle updates, two triangle attentions and a transition; it then biases an attention over the single representation, which is followed by a transition; the block runs 48 times; the single representation never writes back into the pair representation"></svg></div>
-      <div class="pf-caps">${CAPTIONS.map((t, i) => `<p class="pf-cap reveal-in" data-show="${i + 1}">${esc(t).replace(/z_([a-z]{2})/g, 'z<sub>$1</sub>')}</p>`).join('')}</div>
+      <div class="pf-caps">${CAPTIONS.map((t, i) => `<p class="pf-cap reveal-in" data-show="${i + 1}">${AF3.rich(t, esc)}</p>`).join('')}</div>
       ${AF3.arch.mini(s.n, AF3.plain(title.paras[0]).length)}`;
     const svg = frame.querySelector('svg');
 

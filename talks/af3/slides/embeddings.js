@@ -40,8 +40,9 @@ AF3.kinds.embeddings = (s) => ({
     };
     const text = (x, y, size, str, comp, a, b, o = {}) =>
       reg('text', `x="${x}" y="${y}" font-size="${size}" class="em-t${o.cls ? ' ' + o.cls : ''}" text-anchor="middle"${o.bold ? ' font-weight="700"' : ''}`, comp, a, b, str);
-    const shape = (parts) => parts.map(([b, sb], i) => `${b}<tspan dy="4" font-size="75%">${sb}</tspan>` + (i < parts.length - 1 ? '<tspan dy="-4"> \u00d7 </tspan>' : '')).join('');
-    const letter = (k, x, y, comp, a, b) => text(x, y + 1, 26, k, comp, a, b, { bold: true }).replace('class="em-t"', `class="em-t" style="fill:${ink(COLOR[k])}"`);
+    // a formula in KaTeX, registered like the other pieces (it fades in with them)
+    const mathBox = (x, y, size, src, o, comp, a, b) => reg('foreignObject', AF3.foAttrs(x, y, size, o), comp, a, b, AF3.foInner(AF3.tex(src), size, o));
+    const letter = (k, x, y, comp, a, b) => mathBox(x, y + 1, 29, k, { color: ink(COLOR[k]), w: 60 }, comp, a, b);
     // a flat tensor (c, q, s) and a cube (m, t, p, z): x0, y0 the front face's corner
     const flat = (k, x0, y0, w, h, cols, rows, comp, a) => {
       let g = '';
@@ -61,39 +62,39 @@ AF3.kinds.embeddings = (s) => ({
     };
     const head = (lines, x, comp, a) => lines.map((l, i) => text(x, 16 + i * 25, 20, l, comp, a, a + 0.15, { bold: true })).join('');
     const label = (lines, x, y, comp, a) => lines.map((l, i) => text(x, y + i * 21, 17.5, l, comp, a, a + 0.15)).join('');
-    const dims = (parts, x, y, comp, a) => text(x, y, 16.5, shape(parts), comp, a, a + 0.15, { cls: 'muted' });
+    const dims = (src, x, y, comp, a) => mathBox(x, y, 17.5, src, { muted: true, w: 300 }, comp, a, a + 0.15);
 
     let g = '';
     // ---- step a: related sequences and their structures ----
     g += head(['Information about related', 'sequences and their structures'], 150, 'a', 0);
     g += label(['Multiple Sequence Alignment'], 150, 92, 'a', 0.12);
     g += cube('m', 92, 132, 96, 74, 4, 22, -18, 'a', 0.2);
-    g += dims([['N', 'MSA'], ['N', 'tokens'], ['c', 'm']], 150, 250, 'a', 0.55);
+    g += dims('N_{\\mathrm{MSA}} \\times N_{\\mathrm{tokens}} \\times c_m', 150, 250, 'a', 0.55);
     g += label(['Structure Templates'], 150, 300, 'a', 0.5);
     g += cube('t', 100, 346, 84, 84, 4, 22, -18, 'a', 0.58);
-    g += dims([['N', 'templates'], ['N', 'tokens'], ['N', 'tokens'], ['c', 't']], 150, 462, 'a', 0.85);
+    g += dims('N_{\\mathrm{templates}} \\times N_{\\mathrm{tokens}} \\times N_{\\mathrm{tokens}} \\times c_t', 150, 462, 'a', 0.85);
     // ---- step b: all the atoms, single ----
     g += head(['Information about all the', 'atoms (“single”)'], 505, 'b', 0);
     g += label(['Original Atom-Level', 'Single Representation'], 390, 82, 'b', 0.1);
     g += flat('c', 320, 126, 140, 100, 6, 4, 'b', 0.18);
-    g += dims([['N', 'atoms'], ['c', 'atom']], 390, 252, 'b', 0.42);
+    g += dims('N_{\\mathrm{atoms}} \\times c_{\\mathrm{atom}}', 390, 252, 'b', 0.42);
     g += reg('path', 'd="M470 176 L520 176" stroke="var(--muted)" stroke-width="3" stroke-linecap="round" fill="none"', 'b', 0.5, 0.62)
       + reg('polygon', 'points="532,176 519,169 519,183" fill="var(--muted)"', 'b', 0.58, 0.68) + text(501, 156, 15.5, 'updated', 'b', 0.55, 0.7, { cls: 'muted' });
     g += label(['Updated Atom-Level', 'Single Representation'], 620, 82, 'b', 0.55);
     g += flat('q', 550, 126, 140, 100, 6, 4, 'b', 0.62);
-    g += dims([['N', 'atoms'], ['c', 'atom']], 620, 252, 'b', 0.85);
+    g += dims('N_{\\mathrm{atoms}} \\times c_{\\mathrm{atom}}', 620, 252, 'b', 0.85);
     // ---- step c: all the pairs of atoms ----
     g += head(['Information about all the', 'pairs of atoms (“pair”)'], 855, 'c', 0);
     g += label(['Atom-Level Pair Representation'], 855, 92, 'c', 0.15);
     g += cube('p', 790, 124, 110, 100, 7, 18, -16, 'c', 0.25);
-    g += dims([['N', 'atoms'], ['N', 'atoms'], ['c', 'atompair']], 855, 252, 'c', 0.7);
+    g += dims('N_{\\mathrm{atoms}} \\times N_{\\mathrm{atoms}} \\times c_{\\mathrm{atompair}}', 855, 252, 'c', 0.7);
     // ---- step d: the same at the level of tokens ----
     g += label(['Token-Level Single Representation'], 505, 300, 'd', 0);
     g += flat('s', 470, 330, 70, 100, 3, 6, 'd', 0.1);
-    g += dims([['N', 'tokens'], ['c', 'token']], 505, 462, 'd', 0.4);
+    g += dims('N_{\\mathrm{tokens}} \\times c_{\\mathrm{token}}', 505, 462, 'd', 0.4);
     g += label(['Token-Level Pair Representation'], 855, 300, 'd', 0.35);
     g += cube('z', 812, 346, 84, 84, 4, 22, -18, 'd', 0.45);
-    g += dims([['N', 'tokens'], ['N', 'tokens'], ['c', 'z']], 855, 462, 'd', 0.8);
+    g += dims('N_{\\mathrm{tokens}} \\times N_{\\mathrm{tokens}} \\times c_z', 855, 462, 'd', 0.8);
 
     frame.innerHTML = `<h2 class="deck-heading">${esc(AF3.plain(title.paras[0]))}</h2>
       <div class="em-wrap"><svg viewBox="0 0 1000 476" role="img" aria-label="The tensors the input embedder produces: the MSA and templates, the atom-level single and pair representations, and the token-level single and pair representations, shown a group at a time">${g}</svg></div>

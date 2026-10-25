@@ -72,7 +72,9 @@ AF3.kinds.inputprep = (s) => ({
       return reg('path', `d="M${path.map((p) => p.map((v) => v.toFixed(1)).join(' ')).join(' L')}" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linejoin="round"`, comp, a, mid, 'dash')
         + reg('polygon', `points="${head.map((p) => p.map((v) => v.toFixed(1)).join(',')).join(' ')}" fill="var(--muted)"`, comp, mid, b);
     };
-    const letter = (k, x, y, comp, a, b) => text(x, y + 1, 26, k, comp, a, b, { anchor: 'middle', bold: true, fill: ink(COLOR[k]) });
+    // a symbol in KaTeX, registered like the other pieces (it fades in with them)
+    const mathBox = (x, y, size, src, o, comp, a, b) => reg('foreignObject', AF3.foAttrs(x, y, size, o), comp, a, b, 'fade', AF3.foInner(AF3.tex(src), size, o));
+    const letter = (k, x, y, comp, a, b) => mathBox(x, y + 1, 29, k, { color: ink(COLOR[k]), w: 60 }, comp, a, b);
     const label = (lines, x, y, comp, a, b, size = 18) => lines.map((l, i) => text(x, y + i * 22, size, l, comp, a, b, { anchor: 'middle', bold: true })).join('');
 
     // a flat tensor (q, s): cols x rows of cells, a letter in it

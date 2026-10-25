@@ -2,11 +2,13 @@
 // redrawn natively and built up a click at a time, each click saying one of the four bullets. The title, its thanks and the doodle in the corner are kept.
 //
 //   1  the input: a protein sequence of amino acids ("Predicts a 3D protein structure from a protein sequence or protein complex. Input: protein sequence (amino acids)")
-//   2  the MSA: related sequences from other species lined up, with two columns that change together
+//   2  the MSA: related sequences from other species lined up. It carries two signals of evolutionary information, each marked on the card: conservation (a column
+//      that is the same in every sequence, green) and coevolution (two columns that change together, to compatible amino acids: K goes with E, R with D, opposite
+//      charges; the rows are tinted by pair so a change in one column is seen to come with a change in the other)
 //   3  the key mechanism: the Evoformer, which uses the evolutionary information of the MSA (48 blocks, counted up)
 //   4  the output: the predicted 3D structure, a chain that is drawn from its N end (blue) to its C end (red)
 //
-// What is drawn is the same MSA as slide 9 (the same nine residues and shading, a made-up example) so the two slides agree. The Evoformer has 48 blocks (Jumper et al. 2021, the
+// What is drawn is the same MSA as slide 9 (the same nine residues and shading, a made-up example, the same conserved column and the same pair of columns) so the two slides agree. The Evoformer has 48 blocks (Jumper et al. 2021, the
 // Evoformer stack; the AF3 paper says the Pairformer's 48 blocks are "largely unchanged from AF2"). The sequences, the shading and the chain are made up, a fixed picture to show the shapes:
 // an illustration, not data and not an AF2 prediction, and the slide says so.
 {
@@ -22,12 +24,13 @@ const SEQC = ['#e3f0fa', '#6fb0dd'], MSAC = ['#fde6cc', '#ef9a4c'], EVO = { fill
 const ROWS = ['MWLKTGAEV', 'MWIRSGVDL', 'MWIKTNVEL', 'LWLRTGADI', 'MWIKSGVEL'];   // as on slide 9; the first is the query
 const SHADE = { M: .35, W: .95, L: .55, I: .45, K: .75, R: .25, T: .6, S: .3, G: .5, N: .15, A: .7, V: .4, E: .8, D: .2, Q: .4, F: .85 };
 const CHAIN_B = 'GQKFLADLR';                           // a second chain, for "or a protein complex"
-const COVARY = [3, 7];                                      // the columns that change together
+const COVARY = [3, 7], CONSERVED = [1];                     // the columns that change together, and the one that never changes (as on slide 9)
+const PAIRC = { K: '#86b8ee', E: '#86b8ee', R: '#ee93b9', D: '#ee93b9' };   // the two compatible pairs, a hue each: K with E and R with D (opposite charges)
 const W = 1000, H = 330, CW = 205, CX = [8, 265, 522, 779], CH = 300;
 const HEAD = [['Protein sequence', 'amino acids'], ['MSA', 'evolutionary information'], ['Evoformer', 'AF2 model'], ['Predicted 3D', 'structure']];
 const CAPTIONS = [
   'AF2 predicts a 3D protein structure from a protein sequence or a protein complex. Input: the protein sequence, a string of amino acids.',
-  'A multiple sequence alignment (MSA) lines up related sequences from other species. It carries evolutionary information: some positions change together.',
+  'A multiple sequence alignment (MSA) lines up related sequences from other species. It carries evolutionary information: some positions stay the same, and some change together, to compatible amino acids.',
   'Key mechanism: the Evoformer, which uses the evolutionary information from the MSA. It is a stack of 48 blocks.',
   'Output: the predicted 3D structure.',
 ];
@@ -64,7 +67,7 @@ AF3.kinds.recallaf2 = (s) => ({
     const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="${size}" class="rc-t${o.muted ? ' muted' : ''}${o.ink ? ' ink' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''}${o.fill ? ` style="fill:${o.fill}"` : ''} opacity="${op.toFixed(2)}">${str}</text>`;
     const rect = (x, y, w, h, fill, stroke, sw, op = 1, rx = 0) => op < 0.01 ? '' : `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}"${rx ? ` rx="${rx}"` : ''} fill="${fill}" stroke="${stroke}" stroke-width="${sw}" opacity="${op.toFixed(2)}"/>`;
     const arrow = (x1, y, x2, op) => op < 0.01 ? '' : `<g opacity="${op.toFixed(2)}"><line x1="${x1}" y1="${y}" x2="${x2 - 8}" y2="${y}" stroke="var(--muted)" stroke-width="2.6"/><polygon points="${x2},${y} ${x2 - 12},${y - 7} ${x2 - 12},${y + 7}" fill="var(--muted)"/></g>`;
-    const cell = (x, y, w, h, ch, pal, op, ring) => rect(x, y, w - 1.5, h - 1.5, mix(pal[0], pal[1], SHADE[ch]), ring ? ACC : 'none', ring ? 2.6 : 0, op, 3) + txt(x + (w - 1.5) / 2, y + (h - 1.5) / 2 + 1, 13.5, ch, op, { ink: true, bold: true });
+    const cell = (x, y, w, h, ch, pal, op, ring, fill) => rect(x, y, w - 1.5, h - 1.5, fill || mix(pal[0], pal[1], SHADE[ch]), ring ? ACC : 'none', ring ? 2.6 : 0, op, 3) + txt(x + (w - 1.5) / 2, y + (h - 1.5) / 2 + 1, 13.5, ch, op, { ink: true, bold: true });
 
     const draw = (st) => {
       const K = [0, st.k1, st.k2, st.k3, st.k4];
@@ -89,14 +92,34 @@ AF3.kinds.recallaf2 = (s) => ({
         h += txt(CX[0] + CW / 2, 262, 13, 'one chain, or several in a complex', ramp(p, 0.7, 0.95), { muted: true });
       }
 
-      // ---- 2 the MSA: five related sequences; two columns change together ----
+      // ---- 2 the MSA: five related sequences; one column never changes (conserved), two columns change together (coevolution) ----
       {
-        const p = K[2], cw = 20, rh = 25, x0 = CX[1] + (CW - 9 * cw) / 2, y0 = 78;
-        ROWS.forEach((row, r) => { for (let j = 0; j < 9; j++) h += cell(x0 + j * cw, y0 + r * rh, cw, rh, row[j], MSAC, ramp(p, 0.06 + 0.1 * r, 0.26 + 0.1 * r)); });
-        const ro = ramp(p, 0.72, 0.95);
-        COVARY.forEach((c) => { h += rect(x0 + c * cw - 1, y0 - 3, cw + 1, 5 * rh + 4, 'none', ACC, 2.6, ro, 4); });
-        h += txt(CX[1] + CW / 2, y0 + 5 * rh + 24, 13, 'related sequences, one per row', ramp(p, 0.4, 0.6), { muted: true });
-        h += txt(CX[1] + CW / 2, y0 + 5 * rh + 46, 14, 'change together', ro, { bold: true, fill: ACC });
+        const p = K[2], cw = 20, rh = 22, x0 = CX[1] + (CW - 9 * cw) / 2, y0 = 77, gb = y0 + 5 * rh, cx = (j) => x0 + j * cw + cw / 2;
+        h += txt(CX[1] + CW / 2, 64, 12.5, 'related sequences, one per row', ramp(p, 0.3, 0.5), { muted: true });
+        // the cells; in the two coevolving columns they turn to a hue per pair (K and E, R and D) as the pairing is shown
+        ROWS.forEach((row, r) => {
+          for (let j = 0; j < 9; j++) {
+            const ch = row[j], tint = COVARY.includes(j) ? mix(mix(MSAC[0], MSAC[1], SHADE[ch]), PAIRC[ch], ramp(p, 0.74, 0.86)) : null;
+            h += cell(x0 + j * cw, y0 + r * rh, cw, rh, ch, MSAC, ramp(p, 0.04 + 0.08 * r, 0.2 + 0.08 * r), false, tint);
+          }
+        });
+        const frame = (c, color, a, b) => rect(x0 + c * cw - 1, y0 - 3, cw + 1, 5 * rh + 4, 'none', color, 2.6, ramp(p, a, b), 4);
+        const line = (d, color, a, b) => ramp(p, a, b) < 0.01 ? '' : `<path d="${d}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="${ramp(p, a, b).toFixed(2)}"/>`;
+        // conserved: the same residue in every sequence
+        CONSERVED.forEach((c) => {
+          h += frame(c, 'var(--done)', 0.55, 0.63) + line(`M${cx(c)} ${gb + 3} V${gb + 12}`, 'var(--done)', 0.58, 0.66);
+          h += txt(cx(c), gb + 22, 12.5, 'conserved', ramp(p, 0.6, 0.7), { bold: true, fill: 'var(--done)' });
+        });
+        // coevolution: two columns, one pair type per row; when one changes the other changes with it
+        COVARY.forEach((c) => { h += frame(c, ACC, 0.7, 0.78); });
+        const mid = (cx(COVARY[0]) + cx(COVARY[1])) / 2;
+        h += line(`M${cx(COVARY[0])} ${gb + 3} V${gb + 12} H${cx(COVARY[1])} V${gb + 3}`, ACC, 0.74, 0.82) + line(`M${mid} ${gb + 12} V${gb + 29}`, ACC, 0.76, 0.84);
+        h += txt(mid, gb + 40, 12.5, 'change together', ramp(p, 0.8, 0.9), { bold: true, fill: ACC });
+        [['K with E', PAIRC.K, -80], ['R with D', PAIRC.R, 7]].forEach(([lab, col, dx], k) => {
+          const o = ramp(p, 0.86 + 0.04 * k, 0.96 + 0.04 * k), cxm = CX[1] + CW / 2 + dx;
+          h += rect(cxm, gb + 56, 74, 22, col, 'none', 0, o, 11) + txt(cxm + 37, gb + 67.5, 13, lab, o, { ink: true, bold: true });
+        });
+        h += txt(CX[1] + CW / 2, gb + 94, 12.5, 'compatible amino acids', ramp(p, 0.92, 1), { muted: true });
       }
 
       // ---- 3 the Evoformer: a stack of blocks, counted up to 48 ----
@@ -143,7 +166,7 @@ AF3.kinds.recallaf2 = (s) => ({
         cancelAnimationFrame(raf);
         const from = { ...cur }, to = stateOf(step);
         if (!animate) { cur = to; draw(cur); return; }
-        const ms = [0, 3500, 4500, 5000, 4500][step], t0 = performance.now();
+        const ms = [0, 3500, 6500, 5000, 4500][step], t0 = performance.now();
         return new Promise((done) => {
           const tick = (now) => {
             const u = Math.min(1, (now - t0) / ms);

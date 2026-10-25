@@ -1,12 +1,14 @@
-// "Why? Coevolution!!" (slide 21): the picture of the original (contacts in proteins, a multiple sequence alignment, and the
-// loop between them; the Institute for Protein Design's figure) redrawn natively and built up in four clicks, one per piece of
-// the sentence it carried:
+// "Why? Coevolution!!" (slide 21; now titled "Conservation and coevolution in an MSA", for both things it shows): the picture of the original (contacts in proteins, a
+// multiple sequence alignment, and the loop between them; the Institute for Protein Design's figure) redrawn natively and built up
+// in four clicks, one per piece of the sentence it carried:
 //
 //   1  "Important contacts in proteins": the four kinds of contact, as small cartoons (within a chain, mediated by a ligand,
 //      between chains, and one that forms when the shape changes), the two residues in contact marked i and j
-//   2  "...are evolutionarily conserved and encoded in a multiple sequence alignment": the alignment appears (rows are species,
-//      columns are positions), and an arrow carries the contacts to it
-//   3  "...due to co-evolution": columns i and j change together, each big residue in one with a small one in the other
+//   2  the alignment appears (rows are species, columns are positions), an arrow carries the contacts to it, and the first signal
+//      is marked: a column that is the same in every species is conserved
+//   3  the second signal: columns i and j change together (coevolution). Read down the rows, a big residue at i comes with a small
+//      one at j and the other way round (R with S, A with F, W with G, G with R, F with A), so the pair still fits where the two
+//      touch. That is what the big and small residue colours say.
 //   4  "By measuring coevolution, we can infer important contacts in proteins!": an arrow carries it back, and the contacts
 //      light up
 //
@@ -15,21 +17,23 @@
 // correlations" constrain the structure (Jumper et al. 2021). The source is on the References slide.
 {
 const ramp = (p, a, b) => { const t = Math.max(0, Math.min(1, (p - a) / (b - a))); return t * t * (3 - 2 * t); };   // smoothstep
-const BIG = new Set('WFRYKH'), SMALL = new Set('GAS');   // the residue sizes the two coloured columns play on
+const BIG = new Set('WFRYKH'), SMALL = new Set('GAS');   // the residue sizes the two coloured columns play on (the legend lists the ones shown: R, W, F and G, A, S)
+const TITLE = 'Conservation and coevolution in an MSA';   // the original's "Why? Coevolution!!" named one of the two things an MSA shows; at most 38 characters, or the minimap (arch.mini) drops below the heading and covers the alignment's title
 const BIG_FILL = '#f4b26b', SMALL_FILL = '#8ebaf0', INK = '#1d2129';   // pastel fills with dark ink, in both themes
-const MSA = [   // made-up, rows are species; columns 2 (i) and 5 (j) are the pair that changes together
+const MSA = [   // made-up, rows are species; column 0 never changes (conserved); columns 2 (i) and 5 (j) are the pair that changes together
   ['human', 'M', 'E', 'R', 'T', 'L', 'S', 'E'],
   ['fish', 'M', 'D', 'A', 'T', 'I', 'F', 'E'],
   ['starfish', 'M', 'E', 'W', 'S', 'L', 'G', 'D'],
   ['cat', 'M', 'E', 'G', 'T', 'V', 'R', 'E'],
   ['frog', 'M', 'D', 'F', 'T', 'L', 'A', 'E'],
 ];
-const COL_I = 2, COL_J = 5, CELL_W = 48, CELL_H = 32, GX = 480, GY = 118;   // the grid's corner, in map units
+const COL_CONS = 0, COL_I = 2, COL_J = 5, CELL_W = 48, CELL_H = 32, GX = 480, GY = 118;   // the grid's corner, in map units
 
+// $...$ is math (KaTeX), the rest is HTML
 const CAPTIONS = [
   'Important <b>contacts</b> in proteins',
-  '…are evolutionarily conserved and encoded in a multiple sequence alignment',
-  '…due to <b>co-evolution</b>',
+  '…are encoded in a multiple sequence alignment. Some positions are <b>conserved</b>: the same residue in every species.',
+  '…and some positions change <b>together</b> (coevolution): a big residue at $i$ goes with a small one at $j$, and the other way round, so the two still fit.',
   'By measuring coevolution, we can <b>infer</b> important contacts in proteins!',
 ];
 
@@ -46,7 +50,6 @@ AF3.kinds.coevolution = (s) => ({
       .co-cap { position: absolute; left: 0; right: 0; top: 0; margin: 0; font-size: var(--t-body); line-height: 1.25; font-weight: 600; }
       .co-cap b { color: var(--accent); }
     `);
-    const title = AF3.texts(s).find((t) => t.ph === 'title');
     const I = P.rainbow[4], J = 'var(--accent)';   // the two residues of a contact, and their two columns
 
     // every drawn thing is registered with the step it belongs to (a-d) and the span of that step's progress over which it
@@ -59,6 +62,8 @@ AF3.kinds.coevolution = (s) => ({
     };
     const text = (x, y, size, str, comp, a, b, o = {}) =>
       reg('text', `x="${x}" y="${y}" font-size="${size}" class="co-t${o.cls ? ' ' + o.cls : ''}"${o.anchor ? ` text-anchor="${o.anchor}"` : ''}${o.bold ? ' font-weight="700"' : ''}${o.fill ? ` style="fill:${o.fill}"` : ''}`, comp, a, b, 'fade', str);
+    // a label with math in it ($...$), at the same place and fade as a text
+    const mathBox = (x, y, size, str, comp, a, b, o = {}) => reg('foreignObject', AF3.foAttrs(x, y, size, { w: 60, ...o }), comp, a, b, 'fade', AF3.foInner(AF3.rich(str, esc), size, o));
     // an arrow along a polyline: the shaft is drawn on, then the head fades in at the tip
     const arrow = (pts, comp, a, b, color = 'var(--muted)', w = 3) => {
       const [x2, y2] = pts[pts.length - 1], [x1, y1] = pts[pts.length - 2], d = Math.hypot(x2 - x1, y2 - y1), ux = (x2 - x1) / d, uy = (y2 - y1) / d;
@@ -70,7 +75,7 @@ AF3.kinds.coevolution = (s) => ({
     const chain = (d, a, b) => reg('path', `d="${d}" fill="none" stroke="var(--muted)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"`, 'a', a, b);
     const dot = (x, y, a, b) => reg('circle', `cx="${x}" cy="${y}" r="4" fill="var(--muted)"`, 'a', a, b);
     const residue = (x, y, name, color, a, b) => reg('circle', `cx="${x}" cy="${y}" r="10" fill="${color}"`, 'a', a, b)
-      + text(x, y + 1, 13, name, 'a', a, b, { anchor: 'middle', bold: true, fill: '#ffffff' });
+      + mathBox(x, y + 1, 14, `$${name}$`, 'a', a, b, { color: '#ffffff' });
     // a contact: dashed and grey while it is the subject (step a), solid and green once it is inferred (step d)
     const contact = (x1, y1, x2, y2, a, b) => reg('path', `d="M${x1} ${y1} L${x2} ${y2}" stroke="var(--muted)" stroke-width="2.5" stroke-dasharray="5 4" fill="none"`, 'a', a, b)
       + reg('path', `d="M${x1} ${y1} L${x2} ${y2}" stroke="var(--done)" stroke-width="5" stroke-linecap="round" fill="none"`, 'd', 0.1, 0.45);
@@ -111,7 +116,7 @@ AF3.kinds.coevolution = (s) => ({
     g += arrow([[200, 40], [200, 8], [735, 8], [735, 40]], 'b', 0, 0.35);
     g += text(735, 58, 22, 'Multiple Sequence Alignment', 'b', 0.3, 0.45, { anchor: 'middle', bold: true });
     MSA.forEach((row, r) => {
-      const a0 = 0.4 + r * 0.11, b0 = a0 + 0.14, y = GY + r * CELL_H;
+      const a0 = 0.38 + r * 0.08, b0 = a0 + 0.12, y = GY + r * CELL_H;
       g += text(GX + 7 * CELL_W + 14, y + CELL_H / 2, 18, row[0], 'b', a0, b0, { cls: 'muted' });
       for (let c = 0; c < 7; c++) {
         g += reg('rect', `x="${GX + c * CELL_W + 2}" y="${y + 2}" width="${CELL_W - 4}" height="${CELL_H - 4}" rx="4" fill="color-mix(in srgb, var(--fg) 7%, transparent)" stroke="color-mix(in srgb, var(--muted) 30%, transparent)" stroke-width="1"`, 'b', a0, b0);
@@ -119,11 +124,15 @@ AF3.kinds.coevolution = (s) => ({
       }
     });
 
-    // ---- step c: columns i and j change together ----
+    // ---- the first signal, still in step b: a column that is the same in every species is conserved ----
     const colX = (c) => GX + c * CELL_W;
+    g += reg('rect', `x="${colX(COL_CONS) - 1}" y="${GY - 3}" width="${CELL_W + 2}" height="${5 * CELL_H + 6}" rx="8" fill="none" stroke="var(--done)" stroke-width="3"`, 'b', 0.84, 0.93);
+    g += text(colX(COL_CONS) + CELL_W / 2, GY + 5 * CELL_H + 22, 19, 'conserved', 'b', 0.88, 0.98, { anchor: 'middle', bold: true, fill: 'var(--done)' });
+
+    // ---- step c: columns i and j change together ----
     [[COL_I, I, 'i'], [COL_J, J, 'j']].forEach(([c, color, name]) => {
       g += reg('rect', `x="${colX(c) - 1}" y="${GY - 3}" width="${CELL_W + 2}" height="${5 * CELL_H + 6}" rx="8" fill="none" stroke="${color}" stroke-width="3"`, 'c', 0, 0.15);
-      g += text(colX(c) + CELL_W / 2, GY + 5 * CELL_H + 22, 20, name, 'c', 0.05, 0.2, { anchor: 'middle', bold: true, fill: color });
+      g += mathBox(colX(c) + CELL_W / 2, GY + 5 * CELL_H + 22, 22, `$${name}$`, 'c', 0.05, 0.2, { color });
       MSA.forEach((row, r) => {
         const ch = row[c + 1], a0 = 0.18 + r * 0.1, b0 = a0 + 0.14, y = GY + r * CELL_H, fill = BIG.has(ch) ? BIG_FILL : SMALL_FILL;
         g += reg('rect', `x="${colX(c) + 2}" y="${y + 2}" width="${CELL_W - 4}" height="${CELL_H - 4}" rx="4" fill="${fill}" stroke="${color}" stroke-width="1.5"`, 'c', a0, b0);
@@ -134,16 +143,17 @@ AF3.kinds.coevolution = (s) => ({
     g += reg('path', `d="M${xi} ${GY - 6} L${xi} ${GY - 24} L${xj} ${GY - 24} L${xj} ${GY - 6}" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linejoin="round"`, 'c', 0.6, 0.8);
     g += text((xi + xj) / 2, GY - 36, 17, 'change together', 'c', 0.7, 0.9, { anchor: 'middle', bold: true, fill: 'var(--accent)' });
     const ly = GY + 5 * CELL_H + 54;
-    g += reg('rect', `x="${GX}" y="${ly - 9}" width="18" height="18" rx="4" fill="${BIG_FILL}"`, 'c', 0.7, 0.9) + text(GX + 26, ly + 1, 17, 'big residue', 'c', 0.7, 0.9, { cls: 'muted' });
-    g += reg('rect', `x="${GX + 150}" y="${ly - 9}" width="18" height="18" rx="4" fill="${SMALL_FILL}"`, 'c', 0.7, 0.9) + text(GX + 176, ly + 1, 17, 'small residue', 'c', 0.7, 0.9, { cls: 'muted' });
+    g += reg('rect', `x="${GX}" y="${ly - 9}" width="18" height="18" rx="4" fill="${BIG_FILL}"`, 'c', 0.7, 0.9) + text(GX + 26, ly + 1, 17, 'big residue (R, W, F)', 'c', 0.7, 0.9, { cls: 'muted' });
+    g += reg('rect', `x="${GX + 196}" y="${ly - 9}" width="18" height="18" rx="4" fill="${SMALL_FILL}"`, 'c', 0.7, 0.9) + text(GX + 222, ly + 1, 17, 'small residue (G, A, S)', 'c', 0.7, 0.9, { cls: 'muted' });
 
     // ---- step d: the arrow back, and the contacts light up (the green lines are in step a's cartoons) ----
     g += arrow([[735, ly + 22], [735, 376], [200, 376], [200, 346]], 'd', 0, 0.5, 'var(--done)', 4);
 
-    frame.innerHTML = `<h2 class="deck-heading">${esc(AF3.plain(title.paras[0]))}</h2>
-      <div class="co-wrap"><svg viewBox="0 0 1000 384" role="img" aria-label="Contacts in proteins are encoded in an alignment of related sequences through co-evolution, and measuring the co-evolution lets us infer the contacts">${g}</svg></div>
-      <div class="co-caps">${CAPTIONS.map((c, i) => `<p class="co-cap reveal-in" data-show="${i + 1}">${c}</p>`).join('')}</div>
-      ${AF3.arch.mini(s.n, AF3.plain(title.paras[0]).length)}`;
+    const cap = (c) => c.split('$').map((part, k) => (k % 2 ? AF3.tex(part) : part)).join('');
+    frame.innerHTML = `<h2 class="deck-heading">${esc(TITLE)}</h2>
+      <div class="co-wrap"><svg viewBox="0 0 1000 384" role="img" aria-label="Contacts in proteins are encoded in an alignment of related sequences. Some columns are conserved, the same in every species. Two columns change together, a big residue in one with a small one in the other, and measuring that coevolution lets us infer the contacts">${g}</svg></div>
+      <div class="co-caps">${CAPTIONS.map((c, i) => `<p class="co-cap reveal-in" data-show="${i + 1}">${cap(c)}</p>`).join('')}</div>
+      ${AF3.arch.mini(s.n, TITLE.length)}`;
 
     const els = [...frame.querySelectorAll('[data-k]')];
     const draw = (st) => els.forEach((el) => {
@@ -162,7 +172,7 @@ AF3.kinds.coevolution = (s) => ({
         cancelAnimationFrame(raf);
         const from = { ...cur }, to = stateOf(step);
         if (!animate) { cur = to; draw(cur); return; }
-        const ms = [0, 4200, 4200, 3800, 3000][step], t0 = performance.now();
+        const ms = [0, 4200, 5200, 4200, 3000][step], t0 = performance.now();
         return new Promise((done) => {
           const tick = (now) => {
             const u = Math.min(1, (now - t0) / ms);

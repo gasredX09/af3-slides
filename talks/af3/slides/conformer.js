@@ -122,10 +122,10 @@ AF3.kinds.conformer = (s) => ({
     g += text(CX, 352, 16, 'if RDKit fails, AF3 uses the CCD’s ideal coordinates', 'c', 0.6, 0.85, { anchor: 'middle', cls: 'muted', out: { comp: 'd', a: 0, b: 0.2 } });
     // ---- step d: R and t ----
     const gone4 = { comp: 'e', a: 0, b: 0.25 };
-    g += reg('text', 'x="800" y="96" font-size="34" text-anchor="middle" class="cf-t"', 'd', 0.55, 0.8,
-      '<tspan font-style="italic">x</tspan>′ = <tspan font-style="italic">R x</tspan> + <tspan font-style="italic">t</tspan>', gone4);
-    g += text(800, 136, 17, 'R: a random rotation', 'd', 0.62, 0.86, { anchor: 'middle', cls: 'muted', out: gone4 });
-    g += text(800, 160, 17, 't: a random translation', 'd', 0.66, 0.9, { anchor: 'middle', cls: 'muted', out: gone4 });
+    const mathBox = (x, y, size, str, o, comp, a, b, out) => reg('foreignObject', AF3.foAttrs(x, y, size, o), comp, a, b, AF3.foInner(AF3.rich(str, esc), size, o), out);
+    g += mathBox(800, 96, 34, "$x' = R\\,x + t$", {}, 'd', 0.55, 0.8, gone4);
+    g += mathBox(800, 136, 17, '$R$: a random rotation', { muted: true }, 'd', 0.62, 0.86, gone4);
+    g += mathBox(800, 160, 17, '$t$: a random translation', { muted: true }, 'd', 0.66, 0.9, gone4);
     // ---- step e: where it goes ----
     const BX = 500, BY = 64, BW = 470, BH = 258;
     g += reg('path', `d="M352 ${CY} L${BX - 18} ${CY}" fill="none" stroke="var(--muted)" stroke-width="3" stroke-linecap="round"`, 'e', 0.35, 0.55);

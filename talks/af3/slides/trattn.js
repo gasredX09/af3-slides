@@ -72,21 +72,21 @@ const ORESV = ORAWV.map((v, i) => v * GV[i]);
 const HEADV = [ORESV, [0.6, 0.3, 0.8], [0.3, 0.7, 0.5], [0.8, 0.6, 0.2]];
 
 const CAPTIONS = { outgoing: [
-  'We update z_ij, the edge from token i to token j. Row i of z holds the edges that leave from i, row j the edges that leave from j.',
-  'z_ij gives a query and a gate. Row i gives a key and a value for every token k. Row j gives one number for every k, a bias.',
-  'Compare the query with every key to get a score for each token k. Then add the bias b_jk, which brings in the third edge of the triangle, z_jk.',
-  'A softmax turns the scores into weights that add up to 1: how much z_ij listens to each edge z_ik.',
+  'We update $z_{ij}$, the edge from token $i$ to token $j$. Row $i$ of $z$ holds the edges that leave from $i$, row $j$ the edges that leave from $j$.',
+  '$z_{ij}$ gives a query and a gate. Row $i$ gives a key and a value for every token $k$. Row $j$ gives one number for every $k$, a bias.',
+  'Compare the query with every key to get a score for each token $k$. Then add the bias $b_{jk}$, which brings in the third edge of the triangle, $z_{jk}$.',
+  'A softmax turns the scores into weights that add up to 1: how much $z_{ij}$ listens to each edge $z_{ik}$.',
   'Take the weighted sum of the values, then multiply by the gate.',
-  'This runs in 4 heads side by side. Their results are joined and passed through a linear layer, which gives the update for z_ij.',
-  'The same is done for every pair i, j: row i gives the keys and values, row j the bias. The result is added to z.',
+  'This runs in 4 heads side by side. Their results are joined and passed through a linear layer, which gives the update for $z_{ij}$.',
+  'The same is done for every pair $i, j$: row $i$ gives the keys and values, row $j$ the bias. The result is added to $z$.',
 ], incoming: [
-  'We update z_ij, the edge from token i to token j. Column j of z holds the edges that come in to j, column i the edges that come in to i.',
-  'z_ij gives a query and a gate. Column j gives a key and a value for every token k. Column i gives one number for every k, a bias.',
-  'Compare the query with every key to get a score for each token k. Then add the bias b_ki, which brings in the third edge of the triangle, z_ki.',
-  'A softmax turns the scores into weights that add up to 1: how much z_ij listens to each edge z_kj.',
+  'We update $z_{ij}$, the edge from token $i$ to token $j$. Column $j$ of $z$ holds the edges that come in to $j$, column $i$ the edges that come in to $i$.',
+  '$z_{ij}$ gives a query and a gate. Column $j$ gives a key and a value for every token $k$. Column $i$ gives one number for every $k$, a bias.',
+  'Compare the query with every key to get a score for each token $k$. Then add the bias $b_{ki}$, which brings in the third edge of the triangle, $z_{ki}$.',
+  'A softmax turns the scores into weights that add up to 1: how much $z_{ij}$ listens to each edge $z_{kj}$.',
   'Take the weighted sum of the values, then multiply by the gate.',
-  'This runs in 4 heads side by side. Their results are joined and passed through a linear layer, which gives the update for z_ij.',
-  'The same is done for every pair i, j: column j gives the keys and values, column i the bias. The result is added to z.',
+  'This runs in 4 heads side by side. Their results are joined and passed through a linear layer, which gives the update for $z_{ij}$.',
+  'The same is done for every pair $i, j$: column $j$ gives the keys and values, column $i$ the bias. The result is added to $z$.',
 ] };
 
 const make = (mode) => (s) => ({
@@ -100,7 +100,7 @@ const make = (mode) => (s) => ({
       .ta-t.muted { fill: var(--muted); }
       .ta-caps { position: absolute; left: 4.2%; right: 4.2%; top: 82.5%; height: 10.5%; }
       .ta-cap { position: absolute; left: 0; right: 0; top: 0; margin: 0; font-size: var(--t-small); line-height: 1.3; font-weight: 600; }
-      .ta-cap sub { font-size: .7em; }
+      .ta-cap .af3-tex { white-space: nowrap; }   /* a formula never breaks across two lines */
     `);
     const title = AF3.texts(s).find((t) => t.ph === 'title') || AF3.texts(s).slice().sort((a, b) => a.g.y - b.g.y)[0];
     const inc = mode === 'incoming';   // the incoming version takes columns where the outgoing one takes rows
@@ -113,8 +113,9 @@ const make = (mode) => (s) => ({
     // ---- helpers ----
     const zcol = (r, c) => shade(BLUE, (ZV[r][c] - 0.5) * 0.35);
     const ocol = (v) => lerpColor(O_LIGHT, O_DEEP, v);
-    const sub2 = (str) => str.replace(/([zqkbvg])_([a-z]{2})/g, '$1<tspan dy="4" font-size="75%">$2</tspan><tspan dy="-4"></tspan>');
     const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : `<text x="${x}" y="${y}" font-size="${size}" class="ta-t${o.muted ? ' muted' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''}${o.fill ? ` style="fill:${o.fill}"` : ''} opacity="${op.toFixed(2)}">${str}</text>`;
+    const M = (x, y, size, src, op, o = {}) => AF3.svgMath(x, y, size, src, { ...o, op });      // a symbol or formula, set in KaTeX
+    const R = (x, y, size, str, op, o = {}) => AF3.svgRich(x, y, size, str, { ...o, op });      // words with $math$ in them
     const rect = (x, y, w, h, fill, stroke, sw, op = 1) => op < 0.01 ? '' : `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" opacity="${op.toFixed(2)}"/>`;
     const grid = (g0, col, op) => {
       let h = '';
@@ -138,9 +139,9 @@ const make = (mode) => (s) => ({
       return rect(r[0], r[1], r[2], r[3], lerpColor(fromCol, bg, ramp(t, 0.4, 1)), LINE, 1) + (done > 0.01 ? `<g opacity="${done.toFixed(2)}">${inner(r)}</g>` : '');
     };
     const zRect = (r, c) => [Z.x + c * CELL, Z.y + r * CELL, CELL, CELL];
-    const rowLabel = (y, html, op) => txt(642, y, 14, html, op, { anchor: 'start' });
-    const RI = `<tspan style="fill:${CI}" font-weight="700">row i</tspan>`, RJ = `<tspan style="fill:${CJ}" font-weight="700">row j</tspan>`;
-    const CLI = `<tspan style="fill:${CI}" font-weight="700">column i</tspan>`, CLJ = `<tspan style="fill:${CJ}" font-weight="700">column j</tspan>`;
+    const rowLabel = (y, html, op) => op < 0.01 ? '' : `<foreignObject ${AF3.foAttrs(642, y, 14, { anchor: 'start', w: 340 })} opacity="${op.toFixed(2)}">${AF3.foInner(html, 14, { anchor: 'start' })}</foreignObject>`;
+    const ROW = (c, word, sym) => `<span style="color:${c};font-weight:700">${word} ${AF3.tex(`\\boldsymbol{${sym}}`)}</span>`;   // "row i" in the colour of position i
+    const RI = ROW(CI, 'row', 'i'), RJ = ROW(CJ, 'row', 'j'), CLI = ROW(CI, 'column', 'i'), CLJ = ROW(CJ, 'column', 'j');
     const KSRC = inc ? CLJ : RI, BSRC = inc ? CLI : RJ;                                                  // where the keys and values, and the bias, come from
 
     const draw = (st) => {
@@ -157,17 +158,17 @@ const make = (mode) => (s) => ({
         h += rect(Z.x + sw[0] * CELL - 1.5, Z.y - 1.5, CELL + 3, N * CELL + 3, 'none', CI, 3, rowOp);
         h += rect(Z.x + sw[1] * CELL - 1.5, Z.y - 1.5, CELL + 3, N * CELL + 3, 'none', CJ, 3, rowOp);
         h += rect(Z.x + sw[1] * CELL, Z.y + sw[0] * CELL, CELL, CELL, 'none', 'var(--accent)', 3, ramp(a, 0.3, 0.55));
-        if (sw[0] === sw[1]) h += txt(lx(sw[0]), Z.y - 10, 14, 'i, j', rowOp, { bold: true });
-        else h += txt(lx(sw[0]), Z.y - 10, 14, 'i', rowOp, { bold: true, fill: CI }) + txt(lx(sw[1]), Z.y - 10, 14, 'j', rowOp, { bold: true, fill: CJ });
+        if (sw[0] === sw[1]) h += M(lx(sw[0]), Z.y - 10, 14, 'i, j', rowOp, { bold: true });
+        else h += M(lx(sw[0]), Z.y - 10, 14, 'i', rowOp, { bold: true, color: CI }) + M(lx(sw[1]), Z.y - 10, 14, 'j', rowOp, { bold: true, color: CJ });
       } else {
         h += rect(Z.x - 1.5, Z.y + sw[0] * CELL - 1.5, N * CELL + 3, CELL + 3, 'none', CI, 3, rowOp);
         h += rect(Z.x - 1.5, Z.y + sw[1] * CELL - 1.5, N * CELL + 3, CELL + 3, 'none', CJ, 3, rowOp);
         h += rect(Z.x + sw[1] * CELL, Z.y + sw[0] * CELL, CELL, CELL, 'none', 'var(--accent)', 3, ramp(a, 0.3, 0.55));
-        if (sw[0] === sw[1]) h += txt(Z.x - 8, ly(sw[0]), 14, 'rows i, j', rowOp, { anchor: 'end', bold: true });
-        else h += txt(Z.x - 8, ly(sw[0]), 14, 'row i', rowOp, { anchor: 'end', bold: true, fill: CI }) + txt(Z.x - 8, ly(sw[1]), 14, 'row j', rowOp, { anchor: 'end', bold: true, fill: CJ });
+        if (sw[0] === sw[1]) h += R(Z.x - 8, ly(sw[0]), 14, 'rows $\\boldsymbol{i, j}$', rowOp, { anchor: 'end', bold: true });
+        else h += R(Z.x - 8, ly(sw[0]), 14, 'row $\\boldsymbol{i}$', rowOp, { anchor: 'end', bold: true, color: CI }) + R(Z.x - 8, ly(sw[1]), 14, 'row $\\boldsymbol{j}$', rowOp, { anchor: 'end', bold: true, color: CJ });
       }
-      h += txt(Z.x + N * CELL + 8, ly(sw[0]), 15, sub2('z_ij'), ramp(a, 0.4, 0.65) * (1 - ramp(b, 0.3, 0.5) * (1 - ramp(g, 0, 0.05))), { anchor: 'start', bold: true, fill: 'var(--accent)' });
-      h += txt(Z.x + (N * CELL) / 2, 226, 20, 'z', ramp(a, 0, 0.3), { bold: true }) + txt(Z.x + (N * CELL) / 2, 245, 13, 'a vector in', ramp(a, 0, 0.3), { muted: true }) + txt(Z.x + (N * CELL) / 2, 261, 13, 'every cell', ramp(a, 0, 0.3), { muted: true });
+      h += M(Z.x + N * CELL + 8, ly(sw[0]), 15, 'z_{ij}', ramp(a, 0.4, 0.65) * (1 - ramp(b, 0.3, 0.5) * (1 - ramp(g, 0, 0.05))), { anchor: 'start', bold: true, accent: true });
+      h += M(Z.x + (N * CELL) / 2, 226, 20, 'z', ramp(a, 0, 0.3), { bold: true }) + txt(Z.x + (N * CELL) / 2, 245, 13, 'a vector in', ramp(a, 0, 0.3), { muted: true }) + txt(Z.x + (N * CELL) / 2, 261, 13, 'every cell', ramp(a, 0, 0.3), { muted: true });
 
       // ---- step 2: the projections (copies of cells of z fly to their place and become a key, a value, a bias, a query, a gate) ----
       let p = '';
@@ -182,9 +183,9 @@ const make = (mode) => (s) => ({
         p += fly(zRect(bs[0], bs[1]), [SX(k) - SW / 2, BIAS_Y, SW, SB], ramp(b, 0.4 + 0.05 * k, 0.7 + 0.05 * k), zcol(bs[0], bs[1]), SC_BG, (r) => sbar(r[0] + 3, r[1], BIAS[k], B_BAR));
         p += txt(SX(k), 20, 13, String(k), ramp(b, 0.1, 0.3), { muted: true });
       }
-      p += txt(380, 20, 13, 'k', ramp(b, 0.1, 0.3), { muted: true, anchor: 'end' });
-      p += txt(266, Q[1] + SH / 2, 15, sub2('q_ij'), ramp(b, 0.3, 0.5), { anchor: 'end', bold: true }) + txt(Q[0] + SW / 2, 76, 13, 'query', ramp(b, 0.35, 0.55), { muted: true });
-      p += txt(266, G[1] + SH / 2, 15, sub2('g_ij'), ramp(b, 0.3, 0.5) * (1 - ramp(e, 0.45, 0.55)), { anchor: 'end', bold: true }) + txt(G[0] + SW / 2, 310, 13, 'gate', ramp(b, 0.35, 0.55) * (1 - ramp(e, 0.45, 0.55)), { muted: true });
+      p += M(380, 20, 13, 'k', ramp(b, 0.1, 0.3), { muted: true, anchor: 'end' });
+      p += M(266, Q[1] + SH / 2, 15, 'q_{ij}', ramp(b, 0.3, 0.5), { anchor: 'end', bold: true }) + txt(Q[0] + SW / 2, 76, 13, 'query', ramp(b, 0.35, 0.55), { muted: true });
+      p += M(266, G[1] + SH / 2, 15, 'g_{ij}', ramp(b, 0.3, 0.5) * (1 - ramp(e, 0.45, 0.55)), { anchor: 'end', bold: true }) + txt(G[0] + SW / 2, 310, 13, 'gate', ramp(b, 0.35, 0.55) * (1 - ramp(e, 0.45, 0.55)), { muted: true });
       p += rowLabel(KEY_Y + SH / 2, `keys, from ${KSRC}`, ramp(b, 0.15, 0.35)) + rowLabel(BIAS_Y + SB / 2, `bias, from ${BSRC}`, ramp(b, 0.45, 0.65)) + rowLabel(VAL_Y + SH / 2, `values, from ${KSRC}`, ramp(b, 0.3, 0.5));
 
       // ---- step 3: the scores, then the bias is added ----
@@ -200,7 +201,7 @@ const make = (mode) => (s) => ({
         if (tb > 0.001) p += `<rect x="${lerp(x0 + 3, x0 + 3 + SCORE[k] * U, tb).toFixed(1)}" y="${(lerp(BIAS_Y, TOT_Y, tb) + (SB - 8) / 2).toFixed(1)}" width="${(BIAS[k] * U).toFixed(1)}" height="8" rx="1.5" fill="${B_BAR}"/>`;
       }
       p += rowLabel(SC_Y + SB / 2, 'query · key', ramp(c, 0.05, 0.2)) + rowLabel(TOT_Y + SB / 2, 'score + bias', ramp(c, 0.62, 0.78));
-      p += txt(380, TOT_Y + SB / 2, 18, '+', totOp, { anchor: 'end' });
+      p += M(380, TOT_Y + SB / 2, 18, '+', totOp, { anchor: 'end' });
 
       // ---- step 4: softmax ----
       for (let k = 0; k < N; k++) p += scell(SX(k) - SW / 2, W_Y, W[k] / WM, P_BAR, ramp(d, 0.05 + 0.1 * k, 0.15 + 0.1 * k), ramp(d, 0.05 + 0.1 * k, 0.25 + 0.1 * k));
@@ -213,7 +214,7 @@ const make = (mode) => (s) => ({
       }
       p += vcell(ORAW, V_BG, ORAWV, V_BAR, ramp(e, 0.25, 0.4), ramp(e, 0.3, 0.45)) + txt(ORAW[0] + SW / 2, 310, 13, 'weighted sum', ramp(e, 0.3, 0.45), { muted: true });
       // the product of the sum and the gate is the result for this head
-      p += txt(468, 283, 22, '×', ramp(e, 0.55, 0.65)) + txt(540, 283, 22, '=', ramp(e, 0.7, 0.8));
+      p += M(468, 283, 22, '\\times', ramp(e, 0.55, 0.65)) + M(540, 283, 22, '=', ramp(e, 0.7, 0.8));
       const headMove = ramp(f, 0, 0.2);
       p += vcell(lerpRect(RES, HEAD(0), headMove), V_BG, ORESV, V_BAR, ramp(e, 0.72, 0.9), 1) + txt(RES[0] + SW / 2, 310, 13, 'one head', ramp(e, 0.78, 0.9) * (1 - ramp(f, 0, 0.1)), { muted: true });
 
@@ -233,7 +234,7 @@ const make = (mode) => (s) => ({
       }, ou);
       h += rect(O.x + J * CELL, O.y + I * CELL, CELL, CELL, 'none', 'var(--accent)', 3, ramp(f, 0.45, 0.55) * (1 - ramp(g, 0.04, 0.1)));
       if (g > 0.04 && g < 0.97) h += rect(O.x + sw[1] * CELL, O.y + sw[0] * CELL, CELL, CELL, 'none', 'var(--accent)', 3, 1);
-      h += txt(O.x + (N * CELL) / 2, 228, 16, 'the update', ou, { bold: true }) + txt(O.x + (N * CELL) / 2, 247, 13, 'added to z', ramp(g, 0.9, 1), { muted: true });
+      h += txt(O.x + (N * CELL) / 2, 228, 16, 'the update', ou, { bold: true }) + R(O.x + (N * CELL) / 2, 247, 13, 'added to $z$', ramp(g, 0.9, 1), { muted: true });
       const tr = ramp(f, 0.5, 0.78);
       if (tr > 0 && tr < 1) { const [qx, qy] = along(PATH, tr); h += rect(qx - CELL / 2, qy - CELL / 2, CELL, CELL, ocol(OV[I][J]), LINE, 1); }
       svg.innerHTML = h;
@@ -241,7 +242,7 @@ const make = (mode) => (s) => ({
 
     frame.innerHTML = `<h2 class="deck-heading">${esc(AF3.plain(title.paras[0]))}</h2>
       <div class="ta-wrap"><svg viewBox="0 0 1000 395" role="img" aria-label="Triangular attention around the ${inc ? 'ending' : 'starting'} node: for the entry z_ij, a query from z_ij is compared with a key for every token k from ${inc ? 'column j' : 'row i'}, a bias from ${inc ? 'column i' : 'row j'} is added, a softmax gives weights, the values from ${inc ? 'column j' : 'row i'} are summed with those weights and multiplied by a gate; four heads are joined and projected to the update of z_ij; the same is done for every pair i, j"></svg></div>
-      <div class="ta-caps">${CAPTIONS[mode].map((t, i) => `<p class="ta-cap reveal-in" data-show="${i + 1}">${esc(t).replace(/([zqkbvg])_([a-z]{2})/g, '$1<sub>$2</sub>')}</p>`).join('')}</div>
+      <div class="ta-caps">${CAPTIONS[mode].map((t, i) => `<p class="ta-cap reveal-in" data-show="${i + 1}">${AF3.rich(t, esc)}</p>`).join('')}</div>
       ${AF3.arch.mini(s.n, AF3.plain(title.paras[0]).length)}`;
     const svg = frame.querySelector('svg');
 

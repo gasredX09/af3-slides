@@ -35,10 +35,10 @@ const C0 = { x: 56, y: 44 }, G0 = { x: 364, y: 44 }, Q0 = { x: 56, y: 224 }, R0 
 const PX = 654;   // the panel of the last step
 
 const CAPTIONS = [
-  'q is what a block has just computed for each atom: one vector per atom. c is the conditioning of each atom, also one vector per atom. We let c decide how much of q to let through.',
-  'c goes through a linear layer and a sigmoid. A sigmoid squeezes every number into the range from 0 to 1, so each number of the gate says how much to let through.',
-  'q is multiplied by the gate entry by entry. Where the gate is close to 0 a channel is switched off, where it is close to 1 the channel passes.',
-  'In AF3 this closes the output of every attention block and Transition block of the diffusion module: a ← sigmoid(Linear(s)) × a. The bias of the linear layer starts at −2, which alone gives a gate of 0.12.',
+  '$q$ is what a block has just computed for each atom: one vector per atom. $c$ is the conditioning of each atom, also one vector per atom. We let $c$ decide how much of $q$ to let through.',
+  '$c$ goes through a linear layer and a sigmoid. A sigmoid squeezes every number into the range from 0 to 1, so each number of the gate says how much to let through.',
+  '$q$ is multiplied by the gate entry by entry. Where the gate is close to 0 a channel is switched off, where it is close to 1 the channel passes.',
+  'In AF3 this closes the output of every attention block and Transition block of the diffusion module: $a \\leftarrow \\mathrm{sigmoid}(\\mathrm{Linear}(s)) \\times a$. The bias of the linear layer starts at −2, which alone gives a gate of 0.12.',
 ];
 
 AF3.kinds.gating = (s) => ({
@@ -52,6 +52,7 @@ AF3.kinds.gating = (s) => ({
       .gt-t.muted { fill: var(--muted); }
       .gt-caps { position: absolute; left: 4.2%; right: 4.2%; top: 82.5%; height: 10.5%; }
       .gt-cap { position: absolute; left: 0; right: 0; top: 0; margin: 0; font-size: var(--t-small); line-height: 1.3; font-weight: 600; }
+      .gt-cap .af3-tex { white-space: nowrap; }   /* a formula never breaks across two lines */
     `);
     const heading = AF3.apTitle(s);
 
@@ -65,6 +66,8 @@ AF3.kinds.gating = (s) => ({
 
     // ---- helpers ----
     const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : `<text x="${x}" y="${y}" font-size="${size}" class="gt-t${o.muted ? ' muted' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''}${o.fill ? ` style="fill:${o.fill}"` : ''} opacity="${op.toFixed(2)}">${str}</text>`;
+    const M = (x, y, size, src, op, o = {}) => AF3.svgMath(x, y, size, src, { ...o, op });      // a symbol or formula, set in KaTeX
+    const R = (x, y, size, str, op, o = {}) => AF3.svgRich(x, y, size, str, { ...o, op });      // words with $math$ in them
     const rect = (x, y, w, h, fill, stroke, sw, op = 1, rx = 0) => op < 0.01 ? '' : `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}"${rx ? ` rx="${rx}"` : ''} fill="${fill}" stroke="${stroke}" stroke-width="${sw}" opacity="${op.toFixed(2)}"/>`;
     const matrix = (g0, V, colFn, fmt, op, grow = 1) => {
       if (op < 0.01) return '';
@@ -102,8 +105,8 @@ AF3.kinds.gating = (s) => ({
 
       // ---- step 1: q and c ----
       const o1 = ramp(a, 0, 0.35), o2 = ramp(a, 0.2, 0.55);
-      h += matrix(C0, CV, (v) => cCol(v), (v) => v.toFixed(1), o1) + rowLabels(C0, o1) + txt(C0.x + (NC * CW) / 2, C0.y - 14, 17, 'c', o1, { bold: true }) + txt(C0.x + (NC * CW) / 2, C0.y + NA * CH + 16, 12.5, 'the conditioning: one vector per atom', o1, { muted: true });
-      h += matrix(Q0, QV, (v) => lerpColor(Q_LIGHT, Q_DEEP, v), (v) => v.toFixed(2), o2) + rowLabels(Q0, o2) + txt(Q0.x + (NC * CW) / 2, Q0.y - 14, 17, 'q', o2, { bold: true }) + txt(Q0.x + (NC * CW) / 2, Q0.y + NA * CH + 16, 12.5, 'what the block computed: one vector per atom', o2, { muted: true });
+      h += matrix(C0, CV, (v) => cCol(v), (v) => v.toFixed(1), o1) + rowLabels(C0, o1) + M(C0.x + (NC * CW) / 2, C0.y - 14, 17, 'c', o1, { bold: true }) + txt(C0.x + (NC * CW) / 2, C0.y + NA * CH + 16, 12.5, 'the conditioning: one vector per atom', o1, { muted: true });
+      h += matrix(Q0, QV, (v) => lerpColor(Q_LIGHT, Q_DEEP, v), (v) => v.toFixed(2), o2) + rowLabels(Q0, o2) + M(Q0.x + (NC * CW) / 2, Q0.y - 14, 17, 'q', o2, { bold: true }) + txt(Q0.x + (NC * CW) / 2, Q0.y + NA * CH + 16, 12.5, 'what the block computed: one vector per atom', o2, { muted: true });
       h += txt(Q0.x - 40, Q0.y - 14, 12.5, '', 0);
 
       // ---- step 2: the gate ----
@@ -116,28 +119,28 @@ AF3.kinds.gating = (s) => ({
 
       // ---- step 3: q times the gate ----
       const mu = ramp(c, 0, 0.3), rs = ramp(c, 0.3, 0.85);
-      h += arrow(Q0.x + NC * CW + 12, Q0.y + (NA * CH) / 2, R0.x - 14, R0.y + (NA * CH) / 2, mu) + txt((Q0.x + NC * CW + R0.x) / 2, Q0.y + (NA * CH) / 2 - 12, 18, '×', ramp(c, 0.1, 0.3), { bold: true }) + txt((Q0.x + NC * CW + R0.x) / 2, Q0.y + (NA * CH) / 2 + 22, 13, 'the gate,', ramp(c, 0.15, 0.35), { muted: true }) + txt((Q0.x + NC * CW + R0.x) / 2, Q0.y + (NA * CH) / 2 + 37, 13, 'entry by entry', ramp(c, 0.2, 0.4), { muted: true });
+      h += arrow(Q0.x + NC * CW + 12, Q0.y + (NA * CH) / 2, R0.x - 14, R0.y + (NA * CH) / 2, mu) + M((Q0.x + NC * CW + R0.x) / 2, Q0.y + (NA * CH) / 2 - 12, 18, '\\times', ramp(c, 0.1, 0.3)) + txt((Q0.x + NC * CW + R0.x) / 2, Q0.y + (NA * CH) / 2 + 22, 13, 'the gate,', ramp(c, 0.15, 0.35), { muted: true }) + txt((Q0.x + NC * CW + R0.x) / 2, Q0.y + (NA * CH) / 2 + 37, 13, 'entry by entry', ramp(c, 0.2, 0.4), { muted: true });
       h += arrow(G0.x + (NC * CW) / 2 + 60, G0.y + NA * CH + 30, R0.x + (NC * CW) / 2 + 60, R0.y - 22, ramp(c, 0.05, 0.3));
       h += matrix(R0, RV, (v, aa, j) => lerpColor(Q_LIGHT, Q_DEEP, lerp(QV[aa][j], v, rs)), (v, aa, j) => lerp(QV[aa][j], v, rs).toFixed(2), ramp(c, 0.25, 0.5));
-      h += txt(R0.x + (NC * CW) / 2, R0.y - 14, 17, 'q × gate', ramp(c, 0.3, 0.55), { bold: true }) + txt(R0.x + (NC * CW) / 2, R0.y + NA * CH + 16, 12.5, 'switched off where the gate is near 0', ramp(c, 0.7, 0.95), { muted: true });
+      h += M(R0.x + (NC * CW) / 2, R0.y - 14, 17, '\\boldsymbol{q} \\times \\mathbf{gate}', ramp(c, 0.3, 0.55)) + txt(R0.x + (NC * CW) / 2, R0.y + NA * CH + 16, 12.5, 'switched off where the gate is near 0', ramp(c, 0.7, 0.95), { muted: true });
 
       // ---- step 4: where it is used, and the bias ----
       const p4 = ramp(d, 0, 0.35), pl = ramp(d, 0.1, 0.7);
       h += rect(PX - 16, 28, 346, 330, 'var(--bg)', 'var(--muted)', 1.5, p4, 12);
       h += txt(PX + 157, 52, 15, 'In every block of the diffusion module', p4, { bold: true });
       h += sigPlot(PX + 24, 78, 266, 120, pl, p4, ramp(d, 0.55, 0.85) > 0.5 ? -2 : undefined);
-      h += txt(PX + 157, 224, 17, 'a ← sigmoid(Linear(s)) × a', ramp(d, 0.3, 0.6), { bold: true });
+      h += M(PX + 157, 224, 19, 'a \\leftarrow \\mathrm{sigmoid}(\\mathrm{Linear}(s)) \\times a', ramp(d, 0.3, 0.6));
       h += txt(PX + 157, 252, 14, 'the bias of the linear layer starts at −2', ramp(d, 0.55, 0.85), { muted: true });
-      h += txt(PX + 157, 272, 14, 'a gate of sigmoid(−2) = 0.12 for zero input', ramp(d, 0.6, 0.9), { muted: true, fill: G_DEEP });
+      h += R(PX + 157, 272, 14, 'a gate of $\\mathrm{sigmoid}(-2) = 0.12$ for zero input', ramp(d, 0.6, 0.9), { color: G_DEEP });
       h += txt(PX + 157, 304, 13.5, 'after every attention and Transition block;', ramp(d, 0.7, 1), { muted: true });
-      h += txt(PX + 157, 322, 13.5, 's is c in the atom blocks, s in the token blocks', ramp(d, 0.75, 1), { muted: true });
+      h += R(PX + 157, 322, 13.5, '$s$ is $c$ in the atom blocks, $s$ in the token blocks', ramp(d, 0.75, 1), { muted: true });
       h += txt(PX - 16, 376, 12, 'toy numbers (real arithmetic)', 1, { anchor: 'start', muted: true });
       svg.innerHTML = h;
     };
 
     frame.innerHTML = `<h2 class="deck-heading">${esc(heading)}</h2>
       <div class="gt-wrap"><svg viewBox="0 0 1000 385" role="img" aria-label="Conditioned gating: the conditioning c goes through a linear layer and a sigmoid and becomes a gate with every number between 0 and 1; q is multiplied by the gate entry by entry, so channels where the gate is near zero are switched off; in AF3 the gate closes the output of every attention and Transition block of the diffusion module, and its bias starts at minus two"></svg></div>
-      <div class="gt-caps">${CAPTIONS.map((t, i) => `<p class="gt-cap reveal-in" data-show="${i + 1}">${esc(t)}</p>`).join('')}</div>
+      <div class="gt-caps">${CAPTIONS.map((t, i) => `<p class="gt-cap reveal-in" data-show="${i + 1}">${AF3.rich(t, esc)}</p>`).join('')}</div>
       ${AF3.arch.mini(s.n, heading.length)}`;
     const svg = frame.querySelector('svg');
 

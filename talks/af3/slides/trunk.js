@@ -37,11 +37,11 @@ const BOX_Y = 98, BOX_H = 130, PF_H = 240;
 const X_PLUS_Z = 122, X_PLUS_S = 150, X_START = 95, X_OUT = 905;
 
 const CAPTIONS = [
-  'Two streams start from the input embeddings: a pair representation z, one vector for every pair of tokens, and a single representation s, one for every token.',
-  'Template module (2 blocks): similar solved structures are embedded with z, averaged, and added to z.',
-  'MSA module (4 blocks): related sequences write what co-evolves into z. The MSA is then dropped.',
-  'Pairformer (48 blocks): triangle updates refine z, and z biases the attention that refines s. The single stream skipped the first two modules.',
-  'z and s come out. They are also fed back to the start, and the trunk runs again: 4 cycles in all.',
+  'Two streams start from the input embeddings: a pair representation $z$, one vector for every pair of tokens, and a single representation $s$, one for every token.',
+  'Template module (2 blocks): similar solved structures are embedded with $z$, averaged, and added to $z$.',
+  'MSA module (4 blocks): related sequences write what co-evolves into $z$. The MSA is then dropped.',
+  'Pairformer (48 blocks): triangle updates refine $z$, and $z$ biases the attention that refines $s$. The single stream skipped the first two modules.',
+  '$z$ and $s$ come out. They are also fed back to the start, and the trunk runs again: 4 cycles in all.',
 ];
 
 AF3.kinds.trunk = (s) => ({
@@ -64,7 +64,7 @@ AF3.kinds.trunk = (s) => ({
 
     frame.innerHTML = `<h2 class="deck-heading">${esc(AF3.plain(title.paras[0]))}</h2>
       <div class="tr-wrap"><svg viewBox="0 0 1000 400" role="img" aria-label="The trunk: a pair tensor and a single tensor travel through the template module, the MSA module and the Pairformer, and are fed back to the start"></svg></div>
-      <div class="tr-caps">${CAPTIONS.map((c, i) => `<p class="tr-cap reveal-in" data-show="${i + 1}">${esc(c)}</p>`).join('')}</div>`;
+      <div class="tr-caps">${CAPTIONS.map((c, i) => `<p class="tr-cap reveal-in" data-show="${i + 1}">${AF3.rich(c, esc)}</p>`).join('')}</div>`;
     const svg = frame.querySelector('svg');
 
     // a polyline, and the point a fraction t of the way along it
@@ -139,7 +139,7 @@ AF3.kinds.trunk = (s) => ({
         + `<g opacity="${mIn.toFixed(2)}"><path d="M${MOD.msa.x + 40} ${Y_IN - 4} V${BOX_Y - 14}" stroke="${ORG}" stroke-width="3"/>${head(MOD.msa.x + 40, BOX_Y - 2, 'down', ORG)}</g>`;
       // ---- the outputs, and the loops back (recycling) ----
       const outOp = ramp(st.e, 0.3, 0.55);
-      h += `<g opacity="${outOp.toFixed(2)}"><text x="${X_OUT + 38}" y="${Y_Z + 38}" font-size="15" text-anchor="middle" class="tr-t muted">z trunk</text><text x="${X_OUT + 38}" y="${Y_S + 22}" font-size="15" text-anchor="middle" class="tr-t muted">s trunk</text></g>`;
+      h += `<g opacity="${outOp.toFixed(2)}">${AF3.svgMath(X_OUT + 38, Y_Z + 38, 15, String.raw`z_{\mathrm{trunk}}`, { muted: true })}${AF3.svgMath(X_OUT + 38, Y_S + 22, 15, String.raw`s_{\mathrm{trunk}}`, { muted: true })}</g>`;
       const zLoop = [[840, Y_Z], [840, 376], [X_PLUS_Z, 376], [X_PLUS_Z, Y_Z + 14]], sLoop = [[830, Y_S], [830, 358], [X_PLUS_S, 358], [X_PLUS_S, Y_S + 14]];
       const loopT = ramp(st.e, 0.45, 0.9);
       h += `<g fill="none" stroke="${stream}" stroke-width="2.5" stroke-dasharray="7 6" opacity="${ramp(st.e, 0.3, 0.45).toFixed(2)}"><path d="${d(zLoop)}"/><path d="${d(sLoop)}"/></g>`

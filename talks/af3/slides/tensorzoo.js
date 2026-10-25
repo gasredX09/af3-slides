@@ -31,24 +31,24 @@ const rng = (seed) => () => {   // mulberry32
 const LINE = 'rgba(0,0,0,.3)';   // the fills are pastel in both themes, so the lines are dark in both
 
 const CW = 188, CH = 170, GX = 15, GY = 12;
-// symbol, name, shape (n = number of tokens as N_tok etc.), what it holds, made -> used, colour, ink on the badge, glyph, step, place in the grid
+// symbol, name, shape (a string for AF3.svgRich: the sizes are KaTeX), what it holds, made -> used, colour, ink on the badge, glyph, step, place in the grid
 const T = [
-  { id: 's', name: 'Token single', shape: 'N_tok × 384', hold: ['what each token is,', 'plus its context'], flow: 'embedder → trunk → diffusion', color: '#f2b8e6', ink: '#1d2129', glyph: 'vec', step: 1, col: 0, row: 0 },
-  { id: 'z', name: 'Token pair', shape: 'N_tok × N_tok × 128', hold: ['how each token relates', 'to each other token'], flow: 'built once → the whole trunk', color: '#a9d8f2', ink: '#1d2129', glyph: 'pair', step: 1, col: 1, row: 0 },
-  { id: 'm', name: 'MSA', shape: 'N_msa × N_tok × 64', hold: ['related sequences: what', 'changes together'], flow: 'MSA module → into z, dropped', color: '#f7b97c', ink: '#1d2129', glyph: 'msa', step: 2, col: 2, row: 0 },
-  { id: 't', name: 'Templates', shape: 'N_templ × N_tok × N_tok × C', hold: ['distances from similar', 'solved structures'], flow: 'template module → into z', color: '#3e9b7a', ink: '#ffffff', glyph: 'templ', step: 2, col: 3, row: 0 },
-  { id: 'a', name: 'Token activations', shape: 'N_tok × 768', hold: ['the atoms pooled per', 'token, inside the blocks'], flow: 'encoder → 24 blocks → atoms', color: '#e9c46a', ink: '#1d2129', glyph: 'wide', step: 4, col: 4, row: 0 },
-  { id: 'q', name: 'Atom single', shape: 'N_atoms × 128', hold: ['a learned vector for', 'every atom'], flow: 'embedder, diffusion → tokens', color: '#c27bc9', ink: '#ffffff', glyph: 'atomvec', step: 3, col: 0, row: 1 },
-  { id: 'c', name: 'Atom conditioning', shape: 'N_atoms × 128', hold: ['from the reference', 'conformer of each atom'], flow: 'made once → every atom block', color: '#c27bc9', ink: '#ffffff', glyph: 'atomvec', step: 3, col: 1, row: 1 },
-  { id: 'p', name: 'Atom pair', shape: 'N_atoms × N_atoms × 16', hold: ['nearby atoms only: the', 'local blocks are used'], flow: 'biases the atom attention', color: '#1a8fd0', ink: '#ffffff', glyph: 'atompair', step: 3, col: 2, row: 1 },
-  { id: 'x', name: 'Coordinates', shape: 'N_atoms × 3', hold: ['pure noise at first,', 'then the 3D structure'], flow: 'diffusion module, iterated', color: '#5f6368', ink: '#ffffff', glyph: 'xyz', step: 4, col: 3, row: 1 },
+  { id: 's', name: 'Token single', shape: '$N_{\\mathrm{tok}} \\times 384$', hold: ['what each token is,', 'plus its context'], flow: 'embedder → trunk → diffusion', color: '#f2b8e6', ink: '#1d2129', glyph: 'vec', step: 1, col: 0, row: 0 },
+  { id: 'z', name: 'Token pair', shape: '$N_{\\mathrm{tok}} \\times N_{\\mathrm{tok}} \\times 128$', hold: ['how each token relates', 'to each other token'], flow: 'built once → the whole trunk', color: '#a9d8f2', ink: '#1d2129', glyph: 'pair', step: 1, col: 1, row: 0 },
+  { id: 'm', name: 'MSA', shape: '$N_{\\mathrm{msa}} \\times N_{\\mathrm{tok}} \\times 64$', hold: ['related sequences: what', 'changes together'], flow: 'MSA module → into $z$, dropped', color: '#f7b97c', ink: '#1d2129', glyph: 'msa', step: 2, col: 2, row: 0 },
+  { id: 't', name: 'Templates', shape: '$N_{\\mathrm{templ}} \\times N_{\\mathrm{tok}} \\times N_{\\mathrm{tok}} \\times C$', hold: ['distances from similar', 'solved structures'], flow: 'template module → into $z$', color: '#3e9b7a', ink: '#ffffff', glyph: 'templ', step: 2, col: 3, row: 0 },
+  { id: 'a', name: 'Token activations', shape: '$N_{\\mathrm{tok}} \\times 768$', hold: ['the atoms pooled per', 'token, inside the blocks'], flow: 'encoder → 24 blocks → atoms', color: '#e9c46a', ink: '#1d2129', glyph: 'wide', step: 4, col: 4, row: 0 },
+  { id: 'q', name: 'Atom single', shape: '$N_{\\mathrm{atoms}} \\times 128$', hold: ['a learned vector for', 'every atom'], flow: 'embedder, diffusion → tokens', color: '#c27bc9', ink: '#ffffff', glyph: 'atomvec', step: 3, col: 0, row: 1 },
+  { id: 'c', name: 'Atom conditioning', shape: '$N_{\\mathrm{atoms}} \\times 128$', hold: ['from the reference', 'conformer of each atom'], flow: 'made once → every atom block', color: '#c27bc9', ink: '#ffffff', glyph: 'atomvec', step: 3, col: 1, row: 1 },
+  { id: 'p', name: 'Atom pair', shape: '$N_{\\mathrm{atoms}} \\times N_{\\mathrm{atoms}} \\times 16$', hold: ['nearby atoms only: the', 'local blocks are used'], flow: 'biases the atom attention', color: '#1a8fd0', ink: '#ffffff', glyph: 'atompair', step: 3, col: 2, row: 1 },
+  { id: 'x', name: 'Coordinates', shape: '$N_{\\mathrm{atoms}} \\times 3$', hold: ['pure noise at first,', 'then the 3D structure'], flow: 'diffusion module, iterated', color: '#5f6368', ink: '#ffffff', glyph: 'xyz', step: 4, col: 3, row: 1 },
   { id: 'conf', name: 'Confidence', shape: 'per atom · per token pair', hold: ['binned error predictions', 'that rank the samples'], flow: 'confidence module → ranking', color: '#c00000', ink: '#ffffff', glyph: 'conf', step: 5, col: 4, row: 1 },
 ];
 const CAPTIONS = [
-  'The trunk works on tokens: a residue or a base is one token. s holds a vector for every token, z a vector for every pair of tokens. Everything below is built around these two.',
-  'Evidence goes into z and is then dropped: the MSA m (what changes together across related sequences) and the templates t (distances in similar solved structures).',
-  'The atom level, used by the input embedder and the diffusion module: q is a vector for every atom, c is its conditioning (from the reference conformer), p relates nearby atoms and biases the atom attention.',
-  'Inside the diffusion module: x, the atom coordinates, start as pure noise and are denoised into the structure. a holds the atoms pooled per token while the 24 transformer blocks run.',
+  'The trunk works on tokens: a residue or a base is one token. $s$ holds a vector for every token, $z$ a vector for every pair of tokens. Everything below is built around these two.',
+  'Evidence goes into $z$ and is then dropped: the MSA $m$ (what changes together across related sequences) and the templates $t$ (distances in similar solved structures).',
+  'The atom level, used by the input embedder and the diffusion module: $q$ is a vector for every atom, $c$ is its conditioning (from the reference conformer), $p$ relates nearby atoms and biases the atom attention.',
+  'Inside the diffusion module: $x$, the atom coordinates, start as pure noise and are denoised into the structure. $a$ holds the atoms pooled per token while the 24 transformer blocks run.',
   'What comes out for ranking: pLDDT for every atom, and PAE and PDE for every pair of tokens, all as binned error predictions.',
 ];
 const SEED = 8;
@@ -71,8 +71,6 @@ AF3.kinds.tensorzoo = (s) => ({
 
     const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : `<text x="${x}" y="${y}" font-size="${size}" class="tz-t${o.muted ? ' muted' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''}${o.fill ? ` style="fill:${o.fill}"` : ''} opacity="${op.toFixed(2)}">${str}</text>`;
     const rect = (x, y, w, h, fill, stroke, sw, op = 1, rx = 0) => op < 0.01 ? '' : `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}"${rx ? ` rx="${rx}"` : ''} style="fill:${fill};stroke:${stroke};stroke-width:${sw}" opacity="${op.toFixed(2)}"/>`;
-    // the shape as text: N_tok and the like get a subscript
-    const sub = (str) => esc(str).replace(/N_([a-z]+)/g, 'N<tspan baseline-shift="sub" font-size="72%">$1</tspan>');
 
     // ---- the drawings: a list of cells, built in order, with a block behind to hint at the channels ----
     const cellsOf = (g, color) => {
@@ -121,22 +119,24 @@ AF3.kinds.tensorzoo = (s) => ({
         const x = t.col * (CW + GX), y = t.row * (CH + GY), fa = ramp(p, 0, 0.2);
         let c = rect(0, 0, CW, CH, 'var(--bg)', 'var(--muted)', 1.5, 1, 10);
         const bw = t.id.length > 2 ? 46 : 30;   // the badge is wider for 'conf'
-        c += rect(10, 9, bw, 24, t.color, 'none', 0, 1, 6) + `<text x="${10 + bw / 2}" y="21.5" font-size="${t.id.length > 2 ? 14 : 16}" font-weight="700" class="tz-t" text-anchor="middle" style="fill:${t.ink}">${t.id}</text>`;
+        c += rect(10, 9, bw, 24, t.color, 'none', 0, 1, 6) + (t.id.length > 2
+          ? `<text x="${10 + bw / 2}" y="21.5" font-size="14" font-weight="700" class="tz-t" text-anchor="middle" style="fill:${t.ink}">${t.id}</text>`
+          : AF3.svgMath(10 + bw / 2, 21.5, 17, t.id, { color: t.ink, w: bw }));
         c += txt(18 + bw, 21, 14.5, esc(t.name), 1, { anchor: 'start', bold: true });
         c += glyph(t, 94, 70, p);
-        c += txt(94, 113, 13.5, sub(t.shape), ramp(p, 0.4, 0.6), { bold: true });
+        c += AF3.svgRich(94, 113, 13.5, t.shape, { op: ramp(p, 0.4, 0.6), bold: true, w: CW - 6 });
         c += txt(94, 131, 12, esc(t.hold[0]), ramp(p, 0.55, 0.75), { muted: true }) + txt(94, 145, 12, esc(t.hold[1]), ramp(p, 0.6, 0.8), { muted: true });
-        c += txt(94, 160, 11.5, esc(t.flow), ramp(p, 0.75, 0.95), { fill: 'var(--accent)', bold: true });
+        c += AF3.svgRich(94, 160, 11.5, t.flow, { op: ramp(p, 0.75, 0.95), accent: true, bold: true, w: CW - 6 });
         h += `<g transform="translate(${x},${(y + (1 - fa) * 10).toFixed(1)})" opacity="${fa.toFixed(2)}">${c}</g>`;
       });
       // the footnote of the original, always there
-      h += txt(0, 372, 13, sub('N_tok = number of tokens. N_atoms = number of heavy atoms. The last number is the number of channels. The 48-block trunk sees tokens only.'), 1, { anchor: 'start', muted: true });
+      h += AF3.svgRich(0, 372, 13, '$N_{\\mathrm{tok}}$ = number of tokens. $N_{\\mathrm{atoms}}$ = number of heavy atoms. The last number is the number of channels. The 48-block trunk sees tokens only.', { anchor: 'start', muted: true, w: 1000 });
       svg.innerHTML = h;
     };
 
     frame.innerHTML = `<h2 class="deck-heading">${esc(heading)}</h2>
       <div class="tz-wrap"><svg viewBox="0 0 1000 385" role="img" aria-label="The ten tensors passed around AlphaFold 3, each with its shape, what it holds and where it is made and used: s and z at the token level; m and t, the evidence folded into z; q, c and p at the atom level; x and a inside the diffusion module; and the confidence outputs"></svg></div>
-      <div class="tz-caps">${CAPTIONS.map((t, i) => `<p class="tz-cap reveal-in" data-show="${i + 1}">${esc(t)}</p>`).join('')}</div>
+      <div class="tz-caps">${CAPTIONS.map((t, i) => `<p class="tz-cap reveal-in" data-show="${i + 1}">${AF3.rich(t, esc)}</p>`).join('')}</div>
       ${AF3.arch.mini(s.n, heading.length)}`;
     const svg = frame.querySelector('svg');
 

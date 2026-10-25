@@ -68,11 +68,11 @@ const along = (pts, t) => {
 };
 
 const CAPTIONS = [
-  'A random subset of the MSA, new in every recycling cycle, is embedded with the input features: one vector for every token of every sequence. z arrives from the template module.',
-  'Outer product mean: for a pair of positions, multiply their two entries in each sequence and average over the sequences. What changes together in the alignment is added to z.',
-  'Pair-weighted averaging: z says where each sequence looks. The weights for a position come from z alone, the same in every sequence, and then a transition layer follows.',
-  'Then z is refined by two triangle updates, two triangle attentions and a transition, the same pair operations as in the Pairformer.',
-  'This block runs 4 times. Only z moves on to the Pairformer. The sequences never talk to each other directly: whatever they share goes through z.',
+  'A random subset of the MSA, new in every recycling cycle, is embedded with the input features: one vector for every token of every sequence. $z$ arrives from the template module.',
+  'Outer product mean: for a pair of positions, multiply their two entries in each sequence and average over the sequences. What changes together in the alignment is added to $z$.',
+  'Pair-weighted averaging: $z$ says where each sequence looks. The weights for a position come from $z$ alone, the same in every sequence, and then a transition layer follows.',
+  'Then $z$ is refined by two triangle updates, two triangle attentions and a transition, the same pair operations as in the Pairformer.',
+  'This block runs 4 times. Only $z$ moves on to the Pairformer. The sequences never talk to each other directly: whatever they share goes through $z$.',
 ];
 
 AF3.kinds.msamodule = (s) => ({
@@ -110,7 +110,7 @@ AF3.kinds.msamodule = (s) => ({
       const c = lerpColor(shade(BLUE, (ZV[i][j] - 0.5) * 0.3), TINT, tint * STRN[i][j]);
       return con ? shade(c, (ZV[i][j] - 0.5) * 0.7 * con) : c;
     };
-    const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : `<text x="${x}" y="${y}" font-size="${size}" class="ms-t${o.muted ? ' muted' : ''}${o.ink ? ' ink' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''}${o.fill ? ` style="fill:${o.fill}"` : ''} opacity="${op.toFixed(2)}">${str}</text>`;
+    const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : String(str).includes('$') ? AF3.svgRich(x, y, size, str, { ...o, color: o.fill || (o.ink ? INK : undefined), op }) : `<text x="${x}" y="${y}" font-size="${size}" class="ms-t${o.muted ? ' muted' : ''}${o.ink ? ' ink' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''}${o.fill ? ` style="fill:${o.fill}"` : ''} opacity="${op.toFixed(2)}">${str}</text>`;
     const head = (x, y, dir, c = 'var(--accent)') => {
       const p = { right: [[0, 0], [-10, -5.5], [-10, 5.5]], left: [[0, 0], [10, -5.5], [10, 5.5]], up: [[0, 0], [-5.5, 10], [5.5, 10]], down: [[0, 0], [-5.5, -10], [5.5, -10]] }[dir];
       return `<polygon points="${p.map(([a, b]) => `${(x + a).toFixed(1)},${(y + b).toFixed(1)}`).join(' ')}" fill="${c}"/>`;
@@ -145,8 +145,8 @@ AF3.kinds.msamodule = (s) => ({
       g += `<g ${sub(1)}>${cells(mx, my, k, k, NS, NT, (r, c) => mcol(X[r][c]))}</g>`;
       const cols = ramp(b, 0.1, 0.2);
       g += `<g ${sub(cols)}><rect x="${mx + I * k - 1}" y="${my - 2}" width="${k + 2}" height="${NS * k + 4}" fill="none" stroke="${CI}" stroke-width="3"/><rect x="${mx + J * k - 1}" y="${my - 2}" width="${k + 2}" height="${NS * k + 4}" fill="none" stroke="${CJ}" stroke-width="3"/>`
-        + `<text x="${mx + I * k + k / 2}" y="${my - 11}" font-size="15" font-weight="700" text-anchor="middle" class="ms-t" style="fill:${CI}">i</text><text x="${mx + J * k + k / 2}" y="${my - 11}" font-size="15" font-weight="700" text-anchor="middle" class="ms-t" style="fill:${CJ}">j</text></g>`;
-      g += `<g ${sub(1)}>${txt(mx + (NT * k) / 2, my + NS * k + 16, 16, 'm', 1, { bold: true })}</g>`;
+        + AF3.svgMath(mx + I * k + k / 2, my - 11, 15, 'i', { color: CI }) + AF3.svgMath(mx + J * k + k / 2, my - 11, 15, 'j', { color: CJ }) + `</g>`;
+      g += `<g ${sub(1)}>${txt(mx + (NT * k) / 2, my + NS * k + 16, 16, '$m$', 1, { bold: true })}</g>`;
       // the row scan: each sequence's two entries pulse, and a dot (their product) appears to the right
       for (let r = 0; r < NS; r++) {
         const t0 = 0.2 + 0.07 * r, pulse = ramp(b, t0, t0 + 0.05) * (1 - ramp(b, t0 + 0.05, t0 + 0.12)), dot = ramp(b, t0 + 0.03, t0 + 0.09);
@@ -163,7 +163,7 @@ AF3.kinds.msamodule = (s) => ({
       const one = ramp(b, 0.6, 0.7), all = ramp(b, 0.72, 0.92);
       g += `<g ${sub(1)}>${cells(zx, zy, k, k, NT, NT, (r, c) => zcol(r, c, r === I && c === J ? Math.max(one, all) : all))}</g>`;
       g += `<g ${sub(ramp(b, 0.55, 0.62))}><rect x="${zx + J * k - 1}" y="${zy + I * k - 1}" width="${k + 2}" height="${k + 2}" fill="none" stroke="var(--accent)" stroke-width="3"/></g>`;
-      g += `<g ${sub(1)}>${txt(zx + (NT * k) / 2, zy + NT * k + 16, 16, 'z', 1, { bold: true })}</g>`;
+      g += `<g ${sub(1)}>${txt(zx + (NT * k) / 2, zy + NT * k + 16, 16, '$z$', 1, { bold: true })}</g>`;
       g += txt(PANEL.x + PANEL.w / 2, 192, 14.5, 'Per sequence: multiply the two entries', op * ramp(b, 0.2, 0.3))
         + txt(PANEL.x + PANEL.w / 2, 210, 14.5, 'Then average over the sequences', op * ramp(b, 0.5, 0.6))
         + txt(PANEL.x + PANEL.w / 2, 228, 14.5, 'The same for every pair of positions', op * ramp(b, 0.72, 0.85));
@@ -179,11 +179,11 @@ AF3.kinds.msamodule = (s) => ({
       g += `<g ${sub(1)}>${cells(zx, zy, kz, kz, NT, NT, (r, cc) => zcol(r, cc, 1))}</g>`;
       const rowOn = ramp(c, 0.1, 0.2);
       g += `<g ${sub(rowOn)}><rect x="${zx - 1}" y="${zy + I * kz - 1}" width="${NT * kz + 2}" height="${kz + 2}" fill="none" stroke="var(--accent)" stroke-width="3"/></g>`;
-      g += `<g ${sub(1)}>${txt(zx + (NT * kz) / 2, zy + NT * kz + 16, 16, 'z', 1, { bold: true })}</g>`;
+      g += `<g ${sub(1)}>${txt(zx + (NT * kz) / 2, zy + NT * kz + 16, 16, '$z$', 1, { bold: true })}</g>`;
       g += `${seg(zx + NT * kz + 4, zy + kz / 2, mx - 10, zy + kz / 2, op * ramp(c, 0.14, 0.24), 'right')}`;
       // the weights as bars over the columns of m
       const grow = ramp(c, 0.18, 0.32);
-      g += txt(mx + (NT * kw) / 2, 50, 14.5, 'weights from row i of z', op * ramp(c, 0.14, 0.24), { muted: true });
+      g += txt(mx + (NT * kw) / 2, 50, 14.5, 'weights from row $i$ of $z$', op * ramp(c, 0.14, 0.24), { muted: true });
       for (let j = 0; j < NT; j++) {
         const hgt = W[j] * 110 * grow;
         g += `<g ${sub(grow)}><rect x="${mx + j * kw + 4}" y="${(base - hgt).toFixed(1)}" width="${kw - 8}" height="${hgt.toFixed(1)}" rx="2" fill="var(--accent)"/></g>`;
@@ -194,7 +194,7 @@ AF3.kinds.msamodule = (s) => ({
       const fun = ramp(c, 0.32, 0.46), ry = my + NS * kh + 22;
       for (let j = 0; j < NT; j++) g += `<g ${sub(fun)}>${path(`M${mx + j * kw + kw / 2} ${my + NS * kh} L${mx + I * kw + kw / 2} ${ry}`, 1, 'var(--accent)', 1 + W[j] * 9)}</g>`;
       g += `<g ${sub(fun)}>${cells(mx + I * kw, ry, kw, kh, 1, 1, () => mcol(lerp(X[NS - 1][I], XNEW[NS - 1][I], done)))}</g>`;
-      g += txt(mx + I * kw + kw + 8, ry + kh / 2, 14, 'updated position i', op * ramp(c, 0.4, 0.5), { muted: true, anchor: 'start' });
+      g += txt(mx + I * kw + kw + 8, ry + kh / 2, 14, 'updated position $i$', op * ramp(c, 0.4, 0.5), { muted: true, anchor: 'start' });
       // the same weights for every sequence: the whole column i updates
       const col = ramp(c, 0.62, 0.72) * (1 - ramp(c, 0.9, 1));
       g += `<g ${sub(col)}><rect x="${mx + I * kw - 1}" y="${my - 1}" width="${kw + 2}" height="${NS * kh + 2}" fill="none" stroke="var(--accent)" stroke-width="3"/></g>`;
@@ -264,10 +264,10 @@ AF3.kinds.msamodule = (s) => ({
       h += `<circle cx="${BRANCH}" cy="${BL}" r="11" fill="var(--bg)" stroke="var(--accent)" stroke-width="2"/><path d="M${BRANCH - 6} ${BL} H${BRANCH + 6} M${BRANCH} ${BL - 6} V${BL + 6}" stroke="var(--fg)" stroke-width="2"/>`;
 
       // ---- labels ----
-      h += txt(M_X, TL + 40, 15, 'MSA rep. m', ramp(a, 0.76, 0.95) * (1 - ramp(c, 0.2, 0.32)), { bold: true });
-      h += txt(8, 346, 17, 'pair representation z', ramp(a, 0, 0.15), { anchor: 'start', bold: true }) + txt(8, 365, 14, 'from the template module', ramp(a, 0, 0.15), { anchor: 'start', muted: true });
+      h += txt(M_X, TL + 40, 15, 'MSA rep. $m$', ramp(a, 0.76, 0.95) * (1 - ramp(c, 0.2, 0.32)), { bold: true });
+      h += txt(8, 346, 17, 'pair representation $z$', ramp(a, 0, 0.15), { anchor: 'start', bold: true }) + txt(8, 365, 14, 'from the template module', ramp(a, 0, 0.15), { anchor: 'start', muted: true });
       h += txt(650, TL + 46, 14, 'dropped', ramp(e, 0.82, 0.96), { muted: true });
-      h += txt(Z_OUT, 346, 17, 'z', ramp(d, 0.9, 1), { bold: true }) + txt(Z_OUT, 262, 14, 'to Pairformer', ramp(e, 0.84, 0.98), { muted: true });
+      h += txt(Z_OUT, 346, 17, '$z$', ramp(d, 0.9, 1), { bold: true }) + txt(Z_OUT, 262, 14, 'to Pairformer', ramp(e, 0.84, 0.98), { muted: true });
 
       // ---- the laps of the loop (step 5): copies of m and z go round again, three more times ----
       for (let k = 0; k < 3; k++) {
@@ -289,7 +289,7 @@ AF3.kinds.msamodule = (s) => ({
 
     frame.innerHTML = `<h2 class="deck-heading">${esc(AF3.plain(title.paras[0]))}</h2>
       <div class="ms-wrap"><svg viewBox="0 0 1000 395" role="img" aria-label="Inside the MSA module: the MSA is subsampled and embedded; in each of four blocks the outer product mean writes it into the pair representation, the pair-weighted averaging lets the pair representation update the MSA, and the pair representation goes through triangle updates, triangle attentions and a transition; only the pair representation leaves"></svg></div>
-      <div class="ms-caps">${CAPTIONS.map((t, i) => `<p class="ms-cap reveal-in" data-show="${i + 1}">${esc(t)}</p>`).join('')}</div>
+      <div class="ms-caps">${CAPTIONS.map((t, i) => `<p class="ms-cap reveal-in" data-show="${i + 1}">${AF3.rich(t, esc)}</p>`).join('')}</div>
       ${AF3.arch.mini(s.n, AF3.plain(title.paras[0]).length)}`;
     const svg = frame.querySelector('svg');
 

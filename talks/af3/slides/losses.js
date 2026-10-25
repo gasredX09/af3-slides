@@ -36,11 +36,11 @@ const PINK = '#c2255c', GREY = '#8d96a0';
 
 const CAPTIONS = [
   "AF3 is trained on one sum of three kinds of loss: one for the atom coordinates, one for the model's own confidence, and one for a map of distances.",
-  'Each kind has a weight: 4 for the coordinates, 0.03 for the distance map and 10⁻⁴ for the confidence heads. The PAE term has weight 0 until the last training stage.',
+  'Each kind has a weight: 4 for the coordinates, 0.03 for the distance map and $10^{-4}$ for the confidence heads. The PAE term has weight 0 until the last training stage.',
   "Diffusion loss: the denoised structure is compared with the true one. The truth is first rigidly aligned onto it, then each atom's squared error is averaged. DNA, RNA and ligand atoms count more.",
   'Around that error: a factor that depends on the noise level, a bond-length loss for bonded ligands (fine-tuning only) and a smooth LDDT term for local distances. There are no clash or violation losses.',
   'The confidence losses are a classification. Each head gives a probability for every bin of the error, and the loss is minus the log of the probability of the true bin. Training makes that probability grow.',
-  'The distogram loss is the same cross-entropy on distances: the pair representation z must say in which of 64 bins the distance between two tokens falls.',
+  'The distogram loss is the same cross-entropy on distances: the pair representation $z$ must say in which of 64 bins the distance between two tokens falls.',
   'Training runs in four stages. The PAE term is zero until the last one, where the diffusion and distogram losses are switched off. The bond loss is on from the first fine-tuning stage.',
 ];
 
@@ -91,8 +91,8 @@ AF3.kinds.losses = (s) => ({
       .ls-t.muted { fill: var(--muted); }
     `);
     const title = AF3.texts(s).find((t) => t.ph === 'title');
-    const tex = (src, opts = {}) => katex.renderToString(src, { displayMode: false, throwOnError: true, trust: true, strict: 'ignore', ...opts });
-    const m = (src) => tex(src);
+    const tex = (src, opts = {}) => AF3.tex(src, !!opts.displayMode);   // the shared KaTeX (cached; inline math sized like the math in the captions)
+    const m = (src) => AF3.tex(src);
     const L = (sub) => String.raw`\mathcal{L}_{\text{${sub}}}`;
     const total = String.raw`\mathcal{L} \;=\; \htmlClass{k kc}{\alpha_{\text{conf}}\Big(${L('plddt')} + ${L('pde')} + ${L('resolved')} + \alpha_{\text{pae}}\,${L('pae')}\Big)} \;+\; \htmlClass{k kd}{\alpha_{\text{diff}}\,${L('diffusion')}} \;+\; \htmlClass{k kg}{\alpha_{\text{dist}}\,${L('distogram')}}`;
     const mse = String.raw`${L('MSE')} = \tfrac{1}{3}\,\operatorname{mean}_l\; w_l\,\big\lVert \vec x_l - \vec x_l^{\,\text{GT-aligned}}\big\rVert^{2}`;
@@ -110,7 +110,7 @@ AF3.kinds.losses = (s) => ({
           <p class="w reveal-in" data-from="2">${m(String.raw`\alpha_{\text{diff}} = 4`)}</p></div>
         <div style="--c:var(--plot-4)"><h3>Confidence losses</h3><p class="q">Does the model know how wrong it is?</p><p class="sub">Four heads: pLDDT, PAE, PDE and resolved.</p>
           <p class="w reveal-in" data-from="2">${m(String.raw`\alpha_{\text{conf}} = 10^{-4}`)}<small>and ${m(String.raw`\alpha_{\text{pae}} = 0`)} until the last stage, where it is 1</small></p></div>
-        <div style="--c:var(--plot-2)"><h3>Distogram loss</h3><p class="q">Are the distances between tokens right?</p><p class="sub">Read from the pair representation z.</p>
+        <div style="--c:var(--plot-2)"><h3>Distogram loss</h3><p class="q">Are the distances between tokens right?</p><p class="sub">Read from the pair representation ${m('z')}.</p>
           <p class="w reveal-in" data-from="2">${m(String.raw`\alpha_{\text{dist}} = 3\cdot 10^{-2}`)}</p></div>
       </div>
 
@@ -127,7 +127,7 @@ AF3.kinds.losses = (s) => ({
       <div class="ls-panel reveal-in" data-show="4">
         <div class="ls-math big">${tex(diff, { displayMode: true })}</div>
         <div class="ls-legend">
-          ${leg('--plot-3', `the noise-level factor`, `${m(String.raw`(\hat t^{2}+\sigma_{\text{data}}^{2})/(\hat t+\sigma_{\text{data}})^{2}`)} rescales the loss by how noisy the input was; ${m(String.raw`\hat t`)} is the noise level and ${m(String.raw`\sigma_{\text{data}}`)} = 16.`)}
+          ${leg('--plot-3', `the noise-level factor`, `${m(String.raw`(\hat t^{2}+\sigma_{\text{data}}^{2})/(\hat t+\sigma_{\text{data}})^{2}`)} rescales the loss by how noisy the input was; ${m(String.raw`\hat t`)} is the noise level and ${m(String.raw`\sigma_{\text{data}} = 16`)}.`)}
           ${leg('--plot-5', `the bond loss ${m(String.raw`${L('bond')}`)}`, `For a ligand bonded to a chain: the bond must have its true length. ${m(String.raw`\alpha_{\text{bond}}`)} is 0 at first and 1 in the two fine-tuning stages.`)}
           ${leg('--plot-4', `the smooth LDDT ${m(String.raw`${L('smooth lddt')}`)}`, 'A smooth version of 1 minus LDDT: are the distances between nearby atoms right?')}
         </div>
@@ -151,7 +151,7 @@ AF3.kinds.losses = (s) => ({
           <div class="ls-math">${tex(dist, { displayMode: true })}</div>
           <ul class="ls-pts" style="--c:var(--plot-2)">
             <li><b>One representative atom per token:</b> Cβ (Cα for glycine) for protein, C4 for purines, C2 for pyrimidines; a ligand atom is its own token.</li>
-            <li><b>The same loss as in AlphaFold 2.</b> It reads z, so it gives the pair representation a direct signal about distances.</li></ul>
+            <li><b>The same loss as in AlphaFold 2.</b> It reads ${m('z')}, so it gives the pair representation a direct signal about distances.</li></ul>
         </div>
       </div></div>
 
@@ -164,12 +164,12 @@ AF3.kinds.losses = (s) => ({
         </div>
       </div>
 
-      <div class="ls-caps">${CAPTIONS.map((t, i) => `<p class="ls-cap reveal-in" data-show="${i + 1}">${esc(t)}</p>`).join('')}</div>`;
+      <div class="ls-caps">${CAPTIONS.map((t, i) => `<p class="ls-cap reveal-in" data-show="${i + 1}">${AF3.rich(t, esc)}</p>`).join('')}</div>`;
 
     // ---- the two small drawings ----
     const rand = rng(SEED);
     const sv3 = frame.querySelector('#ls-svg3'), sv5 = frame.querySelector('#ls-svg5'), sv6 = frame.querySelector('#ls-svg6');
-    const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : `<text x="${x}" y="${y}" font-size="${size}" class="ls-t${o.muted ? ' muted' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''} opacity="${op.toFixed(2)}">${str}</text>`;
+    const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : String(str).includes('$') ? AF3.svgRich(x, y, size, str, { ...o, op }) : `<text x="${x}" y="${y}" font-size="${size}" class="ls-t${o.muted ? ' muted' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''} opacity="${op.toFixed(2)}">${str}</text>`;
 
     // 3: the truth is rigidly moved onto the prediction (one rotation and one shift for all atoms), then the error of each atom is measured
     const KINDS = [1, 1, 1, 1, 1, 1, 1, 1, 6, 6, 11, 11], RAD = { 1: 4.5, 6: 7, 11: 9 };
@@ -189,7 +189,7 @@ AF3.kinds.losses = (s) => ({
       });
       PRED.forEach((q, i) => { h += `<circle cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="${RAD[KINDS[i]]}" fill="var(--accent)" opacity="0.9"/>`; });
       PRED.forEach((_, i) => { const tr = place(ALIGNED[i], t); h += `<circle cx="${tr[0].toFixed(1)}" cy="${tr[1].toFixed(1)}" r="${RAD[KINDS[i]]}" fill="none" stroke="${GREY}" stroke-width="2.4"/>`; });
-      [['protein', 1, 30], ['DNA or RNA', 6, 135], ['ligand', 11, 270]].forEach(([lab, w, x]) => { h += `<circle cx="${x}" cy="236" r="${RAD[w]}" fill="var(--accent)"/>` + txt(x + 15, 236, 12.5, `${lab} ×${w}`, 1, { anchor: 'start', muted: true }); });
+      [['protein', 1, 30], ['DNA or RNA', 6, 135], ['ligand', 11, 270]].forEach(([lab, w, x]) => { h += `<circle cx="${x}" cy="236" r="${RAD[w]}" fill="var(--accent)"/>` + txt(x + 15, 236, 12.5, `${lab} $\\times ${w}$`, 1, { anchor: 'start', muted: true }); });
       h += txt(18, 258, 11.5, 'filled: predicted · ring: true · toy points', 1, { anchor: 'start', muted: true });
       sv3.innerHTML = h;
     };
@@ -212,11 +212,11 @@ AF3.kinds.losses = (s) => ({
       h += txt(x0 + 6 * (bw + gap), base + 56, 12.5, axis, 1, { muted: true });
       h += txt(x0 - 8, 22, 12.5, 'probability the head gives to each bin', 1, { anchor: 'start', muted: true });
       const pt = dist[TRUE], ls = -Math.log(pt), lop = ramp(p, 0.12, 0.3);
-      h += txt(x0 - 8, 46, 17, `loss = −log p(true bin) = <tspan font-weight="700" style="fill:${PINK}">${ls.toFixed(1)}</tspan>`, lop, { anchor: 'start' });
+      h += txt(x0 - 8, 46, 17, `$\\text{loss} = -\\log p(\\text{true bin}) = \\textcolor{${PINK}}{\\mathbf{${ls.toFixed(1)}}}$`, lop, { anchor: 'start' });
       h += txt(x0 - 8, 70, 12.5, 'toy numbers: training makes the loss fall', lop * ramp(p, 0.4, 0.6), { anchor: 'start', muted: true });
       if (cartoon) {                                                                                           // the distogram: two tokens and the distance between them
         h += `<circle cx="38" cy="120" r="9" fill="var(--plot-2)"/><circle cx="112" cy="160" r="9" fill="var(--plot-2)"/><line x1="46" y1="124" x2="104" y2="156" stroke="var(--fg)" stroke-width="1.6" stroke-dasharray="4 3"/>`;
-        h += txt(38, 100, 13, 'token i', 1, { muted: true }) + txt(112, 184, 13, 'token j', 1, { muted: true }) + txt(88, 132, 12.5, 'd', 1, { muted: true });
+        h += txt(38, 100, 13, 'token $i$', 1, { muted: true }) + txt(112, 184, 13, 'token $j$', 1, { muted: true }) + txt(88, 132, 14, '$d$', 1, { muted: true });
       }
       svg.innerHTML = h;
     };

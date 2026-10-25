@@ -27,7 +27,7 @@ const hexPts = (cx, cy, r, rot = 0) => Array.from({ length: 6 }, (_, i) => [cx +
 const pts = (a) => a.map((p) => p.map((v) => v.toFixed(1)).join(',')).join(' ');
 
 const TASKS = [
-  { tile: ['Protein–', 'ligand'], icon: 'lig', fam: 'pose', ruler: 'rmsd', metric: 'pocket-aligned RMSD < 2 Å', msub: 'line up the pocket, then measure the ligand', pass: 7,
+  { tile: ['Protein–', 'ligand'], icon: 'lig', fam: 'pose', ruler: 'rmsd', metric: 'pocket-aligned RMSD $< 2$ Å', msub: 'line up the pocket, then measure the ligand', pass: 7,
     groups: [{ n: 428, label: 'protein–ligand structures', color: OR }], data: ['PoseBusters V1, released in 2021 or later.', 'AF3 retrained with a 30 Sep 2019 cutoff,', 'so it had seen none of them.'],
     foes: [{ name: 'AutoDock Vina', sub: 'is told where the pocket is' }, { name: 'RoseTTAFold All-Atom', sub: 'blind like AF3, published score' }] },
   { tile: ['Protein–', 'nucleic acid'], icon: 'nuc', fam: 'lddt', ruler: 'lddt', iface: true, rad: '15 Å', metric: 'interface LDDT', msub: 'distances between atoms of the two chains', pass: 8,
@@ -36,13 +36,13 @@ const TASKS = [
   { tile: ['RNA', 'tertiary'], icon: 'rna', fam: 'lddt', ruler: 'lddt', iface: false, rad: '30 Å', col: MG, metric: 'LDDT', msub: 'neighbours within 30 Å for nucleic acids', pass: 6,
     groups: [{ n: 8, label: 'CASP15 RNA targets', color: MG }], data: ['The CASP15 RNA targets that were', 'public by 1 December 2023.'],
     foes: [{ name: 'RF2NA', sub: 'a representative ML system' }, { name: 'AIchemy_RNA', sub: 'top machine-learning entrant' }, { name: 'AIchemy_RNA2', sub: 'top entrant, with human help' }] },
-  { tile: ['Protein–protein', '& antibody'], icon: 'ppi', fam: 'dockq', ruler: 'dockq', metric: 'DockQ > 0.23', msub: 'a docking counts as a success above 0.23', pass: 7,
+  { tile: ['Protein–protein', '& antibody'], icon: 'ppi', fam: 'dockq', ruler: 'dockq', metric: 'DockQ $> 0.23$', msub: 'a docking counts as a success above 0.23', pass: 7,
     groups: [{ n: 1064, label: 'protein–protein', color: BL, w: 1.5 }, { n: 65, label: 'antibody–antigen', color: PU, w: 0.75 }], data: ['Recent PDB entries, low homology to', 'the training set. Antibody: 65 interface', 'clusters, best of 1,000 seeds.'],
     foes: [{ name: 'AlphaFold-Multimer v2.3', sub: 'unrelaxed predictions' }] },
   { tile: ['Protein', 'monomers'], icon: 'mono', fam: 'lddt', ruler: 'lddt', iface: false, rad: '15 Å', col: BL, metric: 'LDDT', msub: 'neighbours within 15 Å for proteins', pass: 8,
     groups: [{ n: 338, label: 'protein chains', color: BL }], data: ['Recent PDB entries, low homology to', 'the training set.'],
     foes: [{ name: 'AlphaFold-Multimer v2.3', sub: 'unrelaxed predictions' }] },
-  { tile: ['Covalent', 'modifications'], icon: 'cov', fam: 'pose', ruler: 'rmsd', bond: true, metric: 'pocket-aligned RMSD < 2 Å', msub: 'the same ruler as for ligands', pass: 6,
+  { tile: ['Covalent', 'modifications'], icon: 'cov', fam: 'pose', ruler: 'rmsd', bond: true, metric: 'pocket-aligned RMSD $< 2$ Å', msub: 'the same ruler as for ligands', pass: 6,
     groups: [{ n: 66, label: ['bonded', 'ligands'], color: OR }, { n: 28, label: ['glyco-', 'sylation'], color: MG }, { n: 154, label: ['modified', 'residues'], parts: [[40, BL], [91, GR], [23, MG]], w: 1.5 }], data: ['Sets from the PDB. Modified residues:', '40 protein, 91 DNA and 23 RNA.'],
     foes: [] },
 ];
@@ -72,7 +72,9 @@ AF3.kinds.evalrig = (s) => ({
     const title = AF3.texts(s).slice().sort((a, b) => a.g.y - b.g.y)[0];   // the heading is the topmost text (this slide's title is not a placeholder)
 
     // ---- helpers ----
-    const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : `<text x="${x}" y="${y}" font-size="${size}" class="ev-t${o.muted ? ' muted' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''}${o.fill ? ` style="fill:${o.fill}"` : ''} opacity="${op.toFixed(2)}">${str}</text>`;
+    // a label with math: the whole string in one <span>, so the spaces next to a formula survive (AF3.svgRich's flex box drops them)
+    const mathTxt = (x, y, size, str, o) => `<foreignObject ${AF3.foAttrs(x, y, size, o)} opacity="${o.op.toFixed(2)}">${AF3.foInner(`<span>${AF3.rich(str, esc)}</span>`, size, o)}</foreignObject>`;
+    const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : str.includes('$') ? mathTxt(x, y, size, o.bold ? str.replace(/\$([^$]+)\$/g, '$\\boldsymbol{$1}$') : str, { anchor: o.anchor, op, muted: o.muted, bold: o.bold, color: o.fill }) : `<text x="${x}" y="${y}" font-size="${size}" class="ev-t${o.muted ? ' muted' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''}${o.fill ? ` style="fill:${o.fill}"` : ''} opacity="${op.toFixed(2)}">${str}</text>`;
     const rect = (x, y, w, h, fill, stroke, sw, op = 1, rx = 0, dash = '') => op < 0.01 ? '' : `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}"${rx ? ` rx="${rx}"` : ''} fill="${fill}" stroke="${stroke}" stroke-width="${sw}"${dash ? ` stroke-dasharray="${dash}"` : ''} opacity="${op.toFixed(2)}"/>`;
     const circ = (x, y, r, fill, stroke, sw, op = 1) => op < 0.01 ? '' : `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" opacity="${op.toFixed(2)}"/>`;
     const line = (x1, y1, x2, y2, col, w, op, dash = '') => op < 0.01 ? '' : `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${col}" stroke-width="${w}"${dash ? ` stroke-dasharray="${dash}"` : ''} stroke-linecap="round" opacity="${op.toFixed(2)}"/>`;
@@ -249,7 +251,7 @@ AF3.kinds.evalrig = (s) => ({
         h += rect(x, 100, 310, 250, 'var(--bg)', FAM[fam], 2.4, op, 14);
         h += txt(x + 155, 128, 18, name, op, { bold: true, fill: FAM[fam] }) + txt(x + 155, 150, 12.5, sub, op, { muted: true });
         const by = 322;
-        if (fam === 'pose') h += `<polygon points="${pts(hexPts(x + 110, by, 16, 0.26))}" fill="none" stroke="${GREY}" stroke-width="2" opacity="${op.toFixed(2)}"/><polygon points="${pts(hexPts(x + 118, by - 5, 16, 0.4))}" fill="${OR}" fill-opacity=".3" stroke="${OR}" stroke-width="2.4" opacity="${op.toFixed(2)}"/>` + txt(x + 190, by, 14, '< 2 \u00c5', op, { bold: true });
+        if (fam === 'pose') h += `<polygon points="${pts(hexPts(x + 110, by, 16, 0.26))}" fill="none" stroke="${GREY}" stroke-width="2" opacity="${op.toFixed(2)}"/><polygon points="${pts(hexPts(x + 118, by - 5, 16, 0.4))}" fill="${OR}" fill-opacity=".3" stroke="${OR}" stroke-width="2.4" opacity="${op.toFixed(2)}"/>` + txt(x + 190, by, 14, '$< 2$ \u00c5', op, { bold: true });
         if (fam === 'lddt') h += [0, 1, 2, 3].map((i) => rect(x + 88 + i * 22, by - 9, 18, 18, i < 3 ? GR : 'none', i < 3 ? GR : GREY, 1.6, op, 3)).join('') + txt(x + 220, by, 13, 'tolerances', op, { anchor: 'start', muted: true });
         if (fam === 'dockq') h += line(x + 110, by - 22, x + 110, by + 22, 'var(--muted)', 3, op) + line(x + 92, by + 8, x + 150, by + 8, 'var(--fg)', 2.4, op) + circ(x + 110, by - 12, 6.5, PU, 'var(--bg)', 2, op) + txt(x + 160, by + 8, 14, '0.23', op, { anchor: 'start', bold: true });
         members.forEach((m, k) => {

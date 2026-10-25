@@ -48,12 +48,12 @@ const BAR_L = (x0, i) => x0 + i * PITCH + 4, BAR_R = (x0, i) => x0 + i * PITCH +
 const GATE = [0.9, 0.35, 0.7, 0.2, 0.55], GATE2 = [0.3, 0.8, 0.5, 0.9, 0.25];   // the gates, one per token (toy; really one per number)
 
 const CAPTIONS = [
-  'The token-level transformer works on a, one vector for each token. It is conditioned by s, a vector for each token that carries the noise level, and by z, a vector for each pair of tokens.',
-  "Step 1, adaptive layer norm: each token's vector is normalised, then scaled and shifted by numbers that linear layers compute from that token's s. This is how s, and the noise level in it, steers every block.",
-  'Step 2, attention with pair bias: every token attends to every token, and z adds a bias for each pair, as in the Pairformer. The result is an update for each token.',
-  'Step 3, a gate: numbers computed from s scale the update, token by token, before it is added back to a. So s decides how much of the attention gets through.',
+  'The token-level transformer works on $a$, one vector for each token. It is conditioned by $s$, a vector for each token that carries the noise level, and by $z$, a vector for each pair of tokens.',
+  "Step 1, adaptive layer norm: each token's vector is normalised, then scaled and shifted by numbers that linear layers compute from that token's $s$. This is how $s$, and the noise level in it, steers every block.",
+  'Step 2, attention with pair bias: every token attends to every token, and $z$ adds a bias for each pair, as in the Pairformer. The result is an update for each token.',
+  'Step 3, a gate: numbers computed from $s$ scale the update, token by token, before it is added back to $a$. So $s$ decides how much of the attention gets through.',
   'Step 4, the transition: the same recipe again, with an MLP in place of the attention. Each token goes through the MLP on its own, so the tokens do not talk to each other here.',
-  'These four steps make one block, and the transformer stacks 24 of them. The final a goes to the atom decoder, which turns it back into an update for each atom.',
+  'These four steps make one block, and the transformer stacks 24 of them. The final $a$ goes to the atom decoder, which turns it back into an update for each atom.',
 ];
 const CHIPS = [['1', 'Adaptive layer norm', 40, 232], ['2', 'Attention with pair bias', 290, 282], ['3', 'Gate', 590, 118], ['4', 'Transition', 726, 130]];   // number, name, x, width
 
@@ -86,8 +86,9 @@ AF3.kinds.ditblock = (s) => ({
 
     // ---- helpers ----
     const col = (base, v) => shade(base, (v - 0.5) * 0.5);
-    const tag = (l) => `<tspan font-weight="700" style="fill:${INK[l]}">${l}</tspan>`;
-    const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : `<text x="${x}" y="${y}" font-size="${size}" class="dt-t${o.muted ? ' muted' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''} opacity="${op.toFixed(2)}">${str}</text>`;
+    const tag = (l) => `$\\textcolor{${INK[l]}}{${l}}$`;                                                              // the letter of a tensor, in the colour of its cells
+    const mtxt = (x, y, size, str, op, o = {}) => AF3.svgRich(x, y, size, str, { ...o, op });   // a label with math: KaTeX between dollar signs
+    const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : String(str).includes('$') ? mtxt(x, y, size, str, op, o) : `<text x="${x}" y="${y}" font-size="${size}" class="dt-t${o.muted ? ' muted' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''} opacity="${op.toFixed(2)}">${str}</text>`;
     const rect = (x, y, w, h, fill, stroke, sw, op = 1, rx = 0) => op < 0.01 ? '' : `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}"${rx ? ` rx="${rx}"` : ''} fill="${fill}" stroke="${stroke}" stroke-width="${sw}" opacity="${op.toFixed(2)}"/>`;
     const cell = (x, y, w, h, fill, op = 1) => op < 0.01 ? '' : `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" fill="${fill}" stroke="${LINE}" stroke-width="0.8" opacity="${op.toFixed(2)}"/>`;
     const arrow = (pts, op, o = {}) => {                                                                             // a polyline with a head; the shaft stops under the head
@@ -128,7 +129,7 @@ AF3.kinds.ditblock = (s) => ({
       if (op < 0.01) return '';
       let g = arrow([[X0 + N * PITCH + 2, S_Y + 30], [480, S_Y + 30], [480, 120], [XU + N * PITCH - 6, 120]], op, { w: 2, noHead: true });
       for (let i = 0; i < N; i++) g += arrow([[BAR_L(XU, i) + BW / 2, 120], [BAR_L(XU, i) + BW / 2, A_Y - 6]], op, { w: 1.6, hl: 6, hw: 3.5, col: PNK });
-      return g + txt(XU + (N * PITCH) / 2, 106, 13, 'gate, from s', op, { muted: true });
+      return g + txt(XU + (N * PITCH) / 2, 106, 13, 'gate, from $s$', op, { muted: true });
     };
 
     const draw = (st) => {
@@ -149,8 +150,8 @@ AF3.kinds.ditblock = (s) => ({
       };
       h += columns(A_Y, AR, RH, aVal, AV, () => at, (i) => colX(X0, i));
       h += columns(S_Y, SR, RH, (j, i) => SVV[j][i], SV, () => at, (i) => colX(X0, i));
-      h += txt(62, S_Y + 20, 17, tag('s'), at, { anchor: 'end' }) + txt(62, S_Y + 38, 12, '384 each', at, { anchor: 'end', muted: true });
-      h += txt(62, A_Y + 52, 17, tag('a'), at, { anchor: 'end' }) + txt(62, A_Y + 70, 12, '768 each', at, { anchor: 'end', muted: true });
+      h += txt(62, S_Y + 20, 19, tag('s'), at, { anchor: 'end' }) + txt(62, S_Y + 38, 12, '384 each', at, { anchor: 'end', muted: true });
+      h += txt(62, A_Y + 52, 19, tag('a'), at, { anchor: 'end' }) + txt(62, A_Y + 70, 12, '768 each', at, { anchor: 'end', muted: true });
 
       // ---- z: the pair conditioning, up to the attention ----
       const zOp = at * (1 - ramp(d, 0, 0.2));
@@ -167,7 +168,7 @@ AF3.kinds.ditblock = (s) => ({
       const e1 = ramp(e, 0, 0.12) * (1 - ramp(e, 0.16, 0.26));
       h += fan(e1 * 0.9) + bars(X0, BAR_L, BS2, AMB, e1) + bars(X0, BAR_R, BH2, GRN, e1);
       const leg = Math.max(bOp, e1);
-      h += rect(150, 305, 10, 10, AMB, LINE, 1, leg) + txt(166, 310, 13, 'scale', leg, { anchor: 'start', muted: true }) + rect(216, 305, 10, 10, GRN, LINE, 1, leg) + txt(232, 310, 13, 'shift, both computed from s', leg, { anchor: 'start', muted: true });
+      h += rect(150, 305, 10, 10, AMB, LINE, 1, leg) + txt(166, 310, 13, 'scale', leg, { anchor: 'start', muted: true }) + rect(216, 305, 10, 10, GRN, LINE, 1, leg) + txt(232, 310, 13, 'shift, both computed from $s$', leg, { anchor: 'start', muted: true });
 
       // ---- step 3: the attention; the update fills in token by token ----
       const cOp = ramp(c, 0, 0.05) * (1 - ramp(d, 0, 0.1));
@@ -214,13 +215,13 @@ AF3.kinds.ditblock = (s) => ({
         h += cur > 0.02 ? `<rect x="${x}" y="346" width="${w}" height="34" rx="8" style="fill:color-mix(in srgb, var(--accent) 14%, var(--bg))" stroke="var(--accent)" stroke-width="3" opacity="${cur.toFixed(2)}"/>` : '';
         h += txt(x + 14, 363, 14, `<tspan font-weight="700">${num}</tspan>  ${name}`, op, { anchor: 'start' });
       });
-      h += txt(992, 363, 16, '× 24 blocks', ramp(f, 0.03, 0.12), { anchor: 'end', bold: true });
+      h += txt(992, 363, 16, '$\\times 24$ blocks', ramp(f, 0.03, 0.12), { anchor: 'end', bold: true });
       svg.innerHTML = h;
     };
 
     frame.innerHTML = `<h2 class="deck-heading">${esc(AF3.plain(title.paras[0]))}</h2>
       <div class="dt-wrap"><svg viewBox="0 0 1000 395" role="img" aria-label="One block of the diffusion transformer at token level: an adaptive layer norm that scales and shifts each token's vector using numbers computed from s; attention between all tokens with a bias from z, giving an update; a gate computed from s that scales the update before it is added to a; a transition with an MLP, the same recipe without attention; 24 such blocks; the result goes to the atom decoder"></svg></div>
-      <div class="dt-caps">${CAPTIONS.map((t, i) => `<p class="dt-cap reveal-in" data-show="${i + 1}">${esc(t)}</p>`).join('')}</div>
+      <div class="dt-caps">${CAPTIONS.map((t, i) => `<p class="dt-cap reveal-in" data-show="${i + 1}">${AF3.rich(t, esc)}</p>`).join('')}</div>
       ${AF3.arch.mini(s.n, AF3.plain(title.paras[0]).length)}`;
     const svg = frame.querySelector('svg');
 

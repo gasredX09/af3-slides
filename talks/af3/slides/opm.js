@@ -62,12 +62,12 @@ const MJ = mean4(AI, BJ), MK = mean4(AI, BK);               // the averages for 
 const VMAX = 0.8;
 
 const CAPTIONS = [
-  'm holds a vector for every position in every sequence of the alignment: sequences down, positions across. We update the pair (i, j).',
-  'm is projected twice, into a and b (32 numbers per cell in AF3, 3 here). For the pair (i, j) we need column i of a and column j of b: one vector of each for every sequence.',
-  'In one sequence, multiply every number of a at position i by every number of b at position j: an outer product, a table of all the combinations.',
+  '$m$ holds a vector for every position in every sequence of the alignment: sequences down, positions across. We update the pair $(i, j)$.',
+  '$m$ is projected twice, into $a$ and $b$ (32 numbers per cell in AF3, 3 here). For the pair $(i, j)$ we need column $i$ of $a$ and column $j$ of $b$: one vector of each for every sequence.',
+  'In one sequence, multiply every number of $a$ at position $i$ by every number of $b$ at position $j$: an outer product, a table of all the combinations.',
   'Do the same in every sequence and average the tables. A combination that keeps coming back stays bright. For a pair that does not change together (below), the average is flatter.',
-  'The averaged table is flattened into one long vector (32 × 32 = 1,024 numbers in AF3) and a linear layer turns it into the update for z_ij.',
-  'The same is done for every pair i, j. The result is added to the pair representation z.',
+  'The averaged table is flattened into one long vector ($32 \\times 32 = 1{,}024$ numbers in AF3) and a linear layer turns it into the update for $z_{ij}$.',
+  'The same is done for every pair $i, j$. The result is added to the pair representation $z$.',
 ];
 
 AF3.kinds.opm = (s) => ({
@@ -81,7 +81,6 @@ AF3.kinds.opm = (s) => ({
       .om-t.muted { fill: var(--muted); }
       .om-caps { position: absolute; left: 4.2%; right: 4.2%; top: 82.5%; height: 10.5%; }
       .om-cap { position: absolute; left: 0; right: 0; top: 0; margin: 0; font-size: var(--t-small); line-height: 1.3; font-weight: 600; }
-      .om-cap sub { font-size: .7em; }
     `);
     const heading = AF3.apTitle(s);
 
@@ -98,7 +97,7 @@ AF3.kinds.opm = (s) => ({
     const zcol = (r, c) => shade(BLUE, (ZV[r][c] - 0.5) * 0.35);
     const ocol = (v) => lerpColor(U_LIGHT, U_DEEP, v);
     const tcol = (v) => lerpColor(O_LIGHT, O_DEEP, Math.min(1, v / VMAX));
-    const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : `<text x="${x}" y="${y}" font-size="${size}" class="om-t${o.muted ? ' muted' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''}${o.fill ? ` style="fill:${o.fill}"` : ''} opacity="${op.toFixed(2)}">${str}</text>`;
+    const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : String(str).includes('$') ? AF3.svgRich(x, y, size, str, { ...o, color: o.fill, op }) : `<text x="${x}" y="${y}" font-size="${size}" class="om-t${o.muted ? ' muted' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''}${o.fill ? ` style="fill:${o.fill}"` : ''} opacity="${op.toFixed(2)}">${str}</text>`;
     const rect = (x, y, w, h, fill, stroke, sw, op = 1) => op < 0.01 ? '' : `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" opacity="${op.toFixed(2)}"/>`;
     const bars = (x, y, w, h, vals, col) => {
       const bh = 5.5, gap = 2.5, y0 = y + (h - (C * bh + (C - 1) * gap)) / 2;
@@ -134,16 +133,16 @@ AF3.kinds.opm = (s) => ({
       const mo = ramp(a, 0, 0.3);
       for (let r = 0; r < NS; r++) h += txt(M0.x - 8, M0.y + r * GC + GC / 2, 13, String(r), mo, { anchor: 'end', muted: true });
       h += txt(M0.x - 8, M0.y - 9, 13, 'seq', mo, { anchor: 'end', muted: true });
-      for (let p = 0; p < NP; p++) h += txt(M0.x + p * GC + GC / 2, M0.y - 9, 13, p === I ? 'i' : p === J ? 'j' : String(p), mo, { bold: p === I || p === J, fill: p === I ? CI : p === J ? CJ : 'var(--muted)' });
+      for (let p = 0; p < NP; p++) h += txt(M0.x + p * GC + GC / 2, M0.y - 9, 13, p === I ? '$i$' : p === J ? '$j$' : String(p), mo, { bold: p === I || p === J, fill: p === I ? CI : p === J ? CJ : 'var(--muted)' });
       h += colBox(M0, I, CI, ramp(a, 0.4, 0.65) * (1 - ramp(f, 0.04, 0.1))) + colBox(M0, J, CJ, ramp(a, 0.5, 0.75) * (1 - ramp(f, 0.04, 0.1)));
-      h += txt(M0.x + (NP * GC) / 2, M0.y + NS * GC + 24, 20, 'm', mo, { bold: true }) + txt(M0.x + (NP * GC) / 2, M0.y + NS * GC + 42, 13, 'a vector in every cell', mo, { muted: true });
+      h += txt(M0.x + (NP * GC) / 2, M0.y + NS * GC + 24, 20, '$m$', mo, { bold: true }) + txt(M0.x + (NP * GC) / 2, M0.y + NS * GC + 42, 13, 'a vector in every cell', mo, { muted: true });
 
       // ---- step 2: a and b ----
       const arr = ramp(b, 0, 0.25), grow = ramp(b, 0.15, 0.4);
       h += arrowTo(`M${M0.x + NP * GC + 6} ${M0.y + 20} C 190 ${M0.y + 20}, 175 82, ${A0.x - 12} 82`, A0.x - 4, 82, arr);
       h += arrowTo(`M${M0.x + NP * GC + 6} ${M0.y + 84} C 190 ${M0.y + 84}, 175 284, ${B0.x - 12} 284`, B0.x - 4, 284, arr);
       h += vgrid(A0, AV, A_BG, A_DEEP, grow) + vgrid(B0, BV, B_BG, B_DEEP, grow);
-      h += txt(A0.x + (NP * GC) / 2, A0.y - 12, 19, 'a', grow, { bold: true }) + txt(B0.x + (NP * GC) / 2, B0.y + NS * GC + 18, 19, 'b', grow, { bold: true });
+      h += txt(A0.x + (NP * GC) / 2, A0.y - 12, 19, '$a$', grow, { bold: true }) + txt(B0.x + (NP * GC) / 2, B0.y + NS * GC + 18, 19, '$b$', grow, { bold: true });
       const side = 1 - ramp(c, 0.1, 0.3);
       h += txt(A0.x + NP * GC + 10, A0.y + 10, 13, 'linear', ramp(b, 0.3, 0.5) * side, { muted: true, anchor: 'start' }) + txt(B0.x + NP * GC + 10, B0.y + 86, 13, 'linear', ramp(b, 0.3, 0.5) * side, { muted: true, anchor: 'start' });
       const cols = ramp(b, 0.55, 0.8) * (1 - ramp(f, 0.04, 0.1));
@@ -162,7 +161,7 @@ AF3.kinds.opm = (s) => ({
         for (let r = 0; r < C; r++) p += `<rect x="${PX}" y="${y + r * PC}" width="${PC}" height="${PC}" fill="${lerpColor(A_LIGHT, A_DEEP, AI[sq][r])}" stroke="${LINE}" stroke-width="1"/>`;
         for (let q = 0; q < C; q++) p += `<rect x="${PX + 54 + q * PC}" y="${y + PC}" width="${PC}" height="${PC}" fill="${lerpColor(B_LIGHT, B_DEEP, BJ[sq][q])}" stroke="${LINE}" stroke-width="1"/>`;
         for (let r = 0; r < C; r++) for (let q = 0; q < C; q++) p += `<rect x="${PX + 116 + q * PC}" y="${y + r * PC}" width="${PC}" height="${PC}" fill="${tcol(TAB[sq][r][q])}" stroke="${LINE}" stroke-width="1"/>`;
-        p += `<text x="${PX + 32}" y="${y + 21}" font-size="18" class="om-t" text-anchor="middle">×</text><text x="${PX + 102}" y="${y + 21}" font-size="18" class="om-t" text-anchor="middle">=</text>`;
+        p += AF3.svgMath(PX + 32, y + 21, 16, String.raw`\times`) + AF3.svgMath(PX + 105, y + 21, 15, '=');
         p += `<text x="${PX - 10}" y="${y + 21}" font-size="13" class="om-t muted" text-anchor="end">${sq}</text></g>`;
       }
       // a pulse on the source cells while a sequence is taken
@@ -172,7 +171,7 @@ AF3.kinds.opm = (s) => ({
         p += rect(A0.x + I * GC, A0.y + sq * GC, GC, GC, 'none', 'var(--accent)', 3, pu * (1 - ramp(f, 0.02, 0.06))) + rect(B0.x + J * GC, B0.y + sq * GC, GC, GC, 'none', 'var(--accent)', 3, pu * (1 - ramp(f, 0.02, 0.06)));
       }
       p += txt(PX + 137, 20, 14, 'one table', ramp(c, 0.5, 0.8), { bold: true }) + txt(PX + 90, 286, 14, 'a table per sequence', ramp(d, 0.3, 0.6), { bold: true });
-      p += txt(PX + 7, 20, 13, 'a at i', ramp(c, 0.2, 0.5), { muted: true }) + txt(PX + 70, 20, 13, 'b at j', ramp(c, 0.2, 0.5), { muted: true });
+      p += txt(PX + 7, 20, 13, '$a$ at $i$', ramp(c, 0.2, 0.5), { muted: true }) + txt(PX + 70, 20, 13, '$b$ at $j$', ramp(c, 0.2, 0.5), { muted: true });
 
       // the average: the four tables flow into one
       const mo4 = ramp(d, 0.55, 0.85);
@@ -181,11 +180,11 @@ AF3.kinds.opm = (s) => ({
       const meanOp = mo4 * (1 - ramp(e, 0.4, 0.6));
       p += sqgrid(MEAN, 3, 3, MEAN.c, (r, q) => tcol(MJ[r][q] * 1.5), meanOp);
       p += txt(MEAN.x + 36, MEAN.y - 14, 14, 'mean over sequences', mo4 * (1 - ramp(e, 0.2, 0.4)), { bold: true });
-      p += txt(MEAN.x + 36, MEAN.y - 30, 13, 'pair (i, j)', mo4 * (1 - ramp(e, 0.2, 0.4)), { muted: true });
+      p += txt(MEAN.x + 36, MEAN.y - 30, 13, 'pair $(i, j)$', mo4 * (1 - ramp(e, 0.2, 0.4)), { muted: true });
       const alt = ramp(d, 0.78, 1) * (1 - ramp(e, 0.1, 0.35));
       p += sqgrid(ALT, 3, 3, ALT.c, (r, q) => tcol(MK[r][q] * 1.5), alt);
       p += txt(ALT.x + 36, ALT.y - 14, 14, 'does not change together', alt, { bold: true });
-      p += txt(ALT.x + 36, ALT.y - 30, 13, 'pair (i, k)', alt, { muted: true });
+      p += txt(ALT.x + 36, ALT.y - 30, 13, 'pair $(i, k)$', alt, { muted: true });
 
       // ---- step 5: flatten, then a linear layer ----
       const fo = ramp(e, 0.3, 0.6);
@@ -200,7 +199,7 @@ AF3.kinds.opm = (s) => ({
       p += txt(FLAT.x + 54, FLAT.y - 16, 14, 'flattened', ramp(e, 0.45, 0.65), { bold: true }) + txt(FLAT.x + 54, FLAT.y + 36, 13, '9 numbers (1,024 in AF3)', ramp(e, 0.5, 0.7), { muted: true });
       const oa = ramp(e, 0.55, 0.7);
       p += arrowTo(`M${OUT[0][0]} ${OUT[0][1]} C ${OUT[1][0]} ${OUT[1][1]}, ${OUT[2][0]} ${OUT[2][1]}, ${OUT[3][0]} ${OUT[3][1]}`, ZO.x - 2, 130, oa);
-      p += txt(826, 150, 13, 'linear layer', ramp(e, 0.6, 0.75), { muted: true });
+      p += txt(812, 150, 13, 'linear layer', ramp(e, 0.6, 0.75), { muted: true });
       h += `<g opacity="${(1 - 0.7 * ramp(f, 0, 0.1)).toFixed(2)}">${p}</g>`;
 
       // ---- the update: empty, then z_ij, then every pair in turn ----
@@ -211,7 +210,7 @@ AF3.kinds.opm = (s) => ({
       }, ou);
       h += rect(ZO.x + J * CELL, ZO.y + I * CELL, CELL, CELL, 'none', 'var(--accent)', 3, ramp(e, 0.65, 0.75) * (1 - ramp(f, 0.04, 0.1)));
       if (f > 0.04 && f < 0.97) h += rect(ZO.x + sw[1] * CELL, ZO.y + sw[0] * CELL, CELL, CELL, 'none', 'var(--accent)', 3, 1);
-      h += txt(ZO.x + (N * CELL) / 2, 238, 16, 'the update', ou, { bold: true }) + txt(ZO.x + (N * CELL) / 2, 257, 13, 'added to z', ramp(f, 0.9, 1), { muted: true });
+      h += txt(ZO.x + (N * CELL) / 2, 238, 16, 'the update', ou, { bold: true }) + txt(ZO.x + (N * CELL) / 2, 257, 13, 'added to $z$', ramp(f, 0.9, 1), { muted: true });
       const tr = ramp(e, 0.72, 0.95);
       if (tr > 0 && tr < 1) { const [qx, qy] = along(PATH, tr); h += rect(qx - CELL / 2, qy - CELL / 2, CELL, CELL, ocol(OV[I][J]), LINE, 1); }
       svg.innerHTML = h;
@@ -219,7 +218,7 @@ AF3.kinds.opm = (s) => ({
 
     frame.innerHTML = `<h2 class="deck-heading">${esc(heading)}</h2>
       <div class="om-wrap"><svg viewBox="0 0 1000 395" role="img" aria-label="The outer product mean: the MSA representation m is projected into a and b; for the pair of positions i and j, an outer product of a and b is taken in each sequence and the tables are averaged over the sequences; the average is flattened and a linear layer turns it into the update of z_ij; the same is done for every pair"></svg></div>
-      <div class="om-caps">${CAPTIONS.map((t, i) => `<p class="om-cap reveal-in" data-show="${i + 1}">${esc(t).replace(/([z])_([a-z]{2})/g, '$1<sub>$2</sub>')}</p>`).join('')}</div>
+      <div class="om-caps">${CAPTIONS.map((t, i) => `<p class="om-cap reveal-in" data-show="${i + 1}">${AF3.rich(t, esc)}</p>`).join('')}</div>
       ${AF3.arch.mini(s.n, heading.length)}`;
     const svg = frame.querySelector('svg');
 

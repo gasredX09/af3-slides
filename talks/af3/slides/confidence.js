@@ -49,9 +49,9 @@ const RX = 730, RY = 80, RP = 7.6, RW = 190;                                    
 
 const CAPTIONS = [
   'AF3 runs the model with 5 random seeds, and each seed draws 5 diffusion samples. That gives 25 candidate structures to choose from.',
-  "Each candidate goes through the confidence module: 4 Pairformer blocks that read the trunk's s and z and the candidate's structure. It predicts how wrong the candidate probably is, in three ways.",
+  "Each candidate goes through the confidence module: 4 Pairformer blocks that read the trunk's $s$ and $z$ and the candidate's structure. It predicts how wrong the candidate probably is, in three ways.",
   'pLDDT: one number for each atom, a prediction of how well its local surroundings are right. It is local. Blue is high, orange is low.',
-  'PAE and PDE are pairwise. PAE: if the structure is aligned on token i, how far off is token j? PDE: how far off is the distance between i and j. Here the module is sure inside each chain, not sure how they sit together.',
+  'PAE and PDE are pairwise. PAE: if the structure is aligned on token $i$, how far off is token $j$? PDE: how far off is the distance between $i$ and $j$. Here the module is sure inside each chain, not sure how they sit together.',
   'pTM and ipTM are single numbers computed from the PAE. pTM uses all pairs: the whole structure. ipTM uses only pairs from different chains: the interfaces.',
   'Each candidate gets one ranking score: mostly ipTM and pTM, a small disorder term and a large penalty for clashes. The candidate with the best score is the output.',
   'Training only practises single denoising steps, so there is no full structure to judge. AF3 therefore runs a short rollout from noise: 20 steps, larger than at inference, no gradients.',
@@ -122,7 +122,8 @@ AF3.kinds.confidence = (s) => ({
     const URL = { pae: matrixUrl(PAEM), pde: matrixUrl(PDEM), tpae: matrixUrl(TPAE), tpde: matrixUrl(TPDE) };
 
     // ---- helpers ----
-    const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : `<text x="${x}" y="${y}" font-size="${size}" class="cf-t${o.muted ? ' muted' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''}${o.fill ? ` style="fill:${o.fill}"` : ''} opacity="${op.toFixed(2)}">${str}</text>`;
+    const mtxt = (x, y, size, str, op, o = {}) => AF3.svgRich(x, y, size, str, { ...o, op });   // a label with math: KaTeX between dollar signs
+    const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : String(str).includes('$') ? mtxt(x, y, size, str, op, { ...o, color: o.fill || o.color }) : `<text x="${x}" y="${y}" font-size="${size}" class="cf-t${o.muted ? ' muted' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''}${o.fill ? ` style="fill:${o.fill}"` : ''} opacity="${op.toFixed(2)}">${str}</text>`;
     const rect = (x, y, w, h, fill, stroke, sw, op = 1, rx = 0, dash = '') => op < 0.01 ? '' : `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}"${rx ? ` rx="${rx}"` : ''} fill="${fill}" stroke="${stroke}" stroke-width="${sw}"${dash ? ` stroke-dasharray="${dash}"` : ''} opacity="${op.toFixed(2)}"/>`;
     const arrow = (pts, op, o = {}) => {                                                                       // a polyline with a head; the shaft stops under the head
       if (op < 0.01) return '';
@@ -166,7 +167,7 @@ AF3.kinds.confidence = (s) => ({
           h += glyph([...CAND[cd].A, ...CAND[cd].B], GX + sp * GC + 3, GY + sd * GC + 3, GC - 6, SEEDC[sd], SEEDC[sd] + '99', 1.7, cellOp);
         }
       }
-      h += txt(GX + (5 * GC) / 2, GY + 5 * GC + 14, 13, '5 seeds × 5 samples', ramp(a, 0.7, 0.9) * inf, { muted: true }) + txt(GX + (5 * GC) / 2, GY + 5 * GC + 34, 15, '= 25 candidates', ramp(a, 0.75, 0.95) * inf, { bold: true });
+      h += txt(GX + (5 * GC) / 2, GY + 5 * GC + 14, 13, '5 seeds $\\times$ 5 samples', ramp(a, 0.7, 0.9) * inf, { muted: true }) + txt(GX + (5 * GC) / 2, GY + 5 * GC + 34, 15, '= 25 candidates', ramp(a, 0.75, 0.95) * inf, { bold: true });
 
       const hKeep = h; h = '';                                                                        // the module and its panels go into one group, so they can be dimmed while the ranking is shown
       // ---- step 2: the example goes into the module ----
@@ -174,7 +175,7 @@ AF3.kinds.confidence = (s) => ({
       h += rect(ex[0] - 1, ex[1] - 1, GC + 2, GC + 2, 'none', CI, 3, hl * inf, 4);
       h += arrow([[GX + 5 * GC + 4, ex[1] + GC / 2], [322, ex[1] + GC / 2], [322, BOX[1] + BOX[3] / 2], [BOX[0] - 3, BOX[1] + BOX[3] / 2]], ramp(b, 0.15, 0.4) * inf * (1 - ramp(f, 0.35, 0.5)), {});
       const mOp = ramp(b, 0.1, 0.35) * inf;
-      h += rect(BOX[0], BOX[1], BOX[2], BOX[3], 'var(--bg)', 'var(--muted)', 1.6, mOp, 8) + txt(BOX[0] + BOX[2] / 2, BOX[1] + 17, 15, 'confidence module (4 blocks)', mOp, { bold: true }) + txt(BOX[0] + BOX[2] / 2, BOX[1] + 37, 12.5, "reads the trunk's s and z and the candidate", mOp, { muted: true });
+      h += rect(BOX[0], BOX[1], BOX[2], BOX[3], 'var(--bg)', 'var(--muted)', 1.6, mOp, 8) + txt(BOX[0] + BOX[2] / 2, BOX[1] + 17, 15, 'confidence module (4 blocks)', mOp, { bold: true }) + txt(BOX[0] + BOX[2] / 2, BOX[1] + 37, 12.5, "reads the trunk's $s$ and $z$ and the candidate", mOp, { muted: true });
       const titles = [['pLDDT', 'local, per atom'], ['PAE', 'pairwise'], ['PDE', 'pairwise']];
       PX.forEach((x, i) => {
         const op = ramp(b, 0.3 + 0.08 * i, 0.55 + 0.08 * i) * inf;
@@ -212,12 +213,12 @@ AF3.kinds.confidence = (s) => ({
       h = hKeep + `<g opacity="${mD.toFixed(2)}">${h}</g>`;
       // ---- step 6: the ranking score of each candidate; the penalty; the order; the output ----
       const R = ramp(f, 0.05, 0.25) * inf, pen = ramp(f, 0.35, 0.5), srt = ramp(f, 0.5, 0.8), out = ramp(f, 0.8, 1);
-      h += txt(RX - 4, 46, 12.5, 'ranking score = 0.8 ipTM + 0.2 pTM', R, { anchor: 'start', muted: true }) + txt(RX - 4, 62, 12.5, '+ 0.5 disorder − 100 clash', R, { anchor: 'start', muted: true });
+      h += txt(RX - 4, 46, 12.5, '$\\text{ranking score} = 0.8\\,\\text{ipTM} + 0.2\\,\\text{pTM}$', R, { anchor: 'start', muted: true }) + txt(RX - 4, 62, 12.5, '$+\\,0.5\\,\\text{disorder} - 100\\,\\text{clash}$', R, { anchor: 'start', muted: true });
       for (let cd = 0; cd < 25; cd++) {
         const v = cd === CLASH ? lerp(RAW[cd], 0, pen) : RAW[cd], y = lerp(RY + cd * RP, RY + RANK[cd] * RP, srt), isTop = cd === TOP;
         h += rect(RX, y, RW * Math.max(0.01, v), RP - 2.5, SEEDC[Math.floor(cd / 5)], isTop && out > 0.5 ? 'var(--accent)' : 'none', 2, R * (1 - ramp(g, 0, 0.25)), 1);
         if (cd === CLASH) {
-          h += rect(RX, y, RW * RAW[cd], RP - 2.5, 'none', PINK, 1.2, R * pen * 0.9 * (1 - ramp(f, 0.5, 0.7)), 1, '3 2') + txt(RX + RW * Math.max(RAW[cd] * (1 - pen), 0.02) + 6, y + (RP - 2.5) / 2, 11.5, 'clash: −100', R * ramp(f, 0.3, 0.4), { anchor: 'start', fill: PINK });
+          h += rect(RX, y, RW * RAW[cd], RP - 2.5, 'none', PINK, 1.2, R * pen * 0.9 * (1 - ramp(f, 0.5, 0.7)), 1, '3 2') + txt(RX + RW * Math.max(RAW[cd] * (1 - pen), 0.02) + 6, y + (RP - 2.5) / 2, 11.5, 'clash: $-100$', R * ramp(f, 0.3, 0.4), { anchor: 'start', fill: PINK });
         }
       }
       const oy = RY + 25 * RP + 10;
@@ -260,7 +261,7 @@ AF3.kinds.confidence = (s) => ({
 
     frame.innerHTML = `<h2 class="deck-heading">${esc(AF3.plain(title.paras[0]))}</h2>
       <div class="cf-wrap"><svg viewBox="0 0 1000 395" role="img" aria-label="Confidence metrics: 5 seeds with 5 samples each give 25 candidate structures; each goes through the confidence module, which predicts pLDDT per atom, PAE and PDE per pair of tokens, and pTM and ipTM from the PAE; the candidates are ranked and the best is the output; the module is trained on a short rollout compared with the ground truth"></svg></div>
-      <div class="cf-caps">${CAPTIONS.map((t, i) => `<p class="cf-cap reveal-in" data-show="${i + 1}">${esc(t)}</p>`).join('')}</div>
+      <div class="cf-caps">${CAPTIONS.map((t, i) => `<p class="cf-cap reveal-in" data-show="${i + 1}">${AF3.rich(t, esc)}</p>`).join('')}</div>
       ${AF3.arch.mini(s.n, AF3.plain(title.paras[0]).length)}`;
     const svg = frame.querySelector('svg');
 

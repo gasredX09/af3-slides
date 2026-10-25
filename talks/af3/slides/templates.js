@@ -40,10 +40,10 @@ const EQ = { z: 615, u: 770, n: 925 };                      // z + u = new z, ce
 
 const CAPTIONS = [
   'Each template, a known structure of a similar protein (up to 4 are used), becomes a pair map: for every pair of residues, how far apart they are and which way one points from the other.',
-  'z, the model’s current belief about every pair, is projected and added to each template. That lets the network attend to the regions of a template that matter for what it believes so far.',
+  '$z$, the model’s current belief about every pair, is projected and added to each template. That lets the network attend to the regions of a template that matter for what it believes so far.',
   'Each template goes through a small Pairformer (2 blocks) on its own, so the templates do not mix yet.',
-  'Now they mix: the templates are averaged into one pair map, and a ReLU and a linear layer turn it into u, with the same shape as z.',
-  'u is added to z. This runs in each recycling cycle (4 in all), so from the second cycle on the templates are read in light of the last cycle’s z.',
+  'Now they mix: the templates are averaged into one pair map, and a ReLU and a linear layer turn it into $u$, with the same shape as $z$.',
+  '$u$ is added to $z$. This runs in each recycling cycle (4 in all), so from the second cycle on the templates are read in light of the last cycle’s $z$.',
 ];
 
 AF3.kinds.templates = (s) => ({
@@ -72,7 +72,7 @@ AF3.kinds.templates = (s) => ({
     const ZP = Array.from({ length: N }, () => Array.from({ length: N }, () => 0.3 + 0.5 * rand()));   // how much of z each cell of a template takes
 
     // ---- drawing helpers ----
-    const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : `<text x="${x}" y="${y}" font-size="${size}" class="tp-t${o.muted ? ' muted' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''} opacity="${op.toFixed(2)}">${str}</text>`;
+    const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : String(str).includes('$') ? AF3.svgRich(x, y, size, str, { ...o, color: o.fill, op }) : `<text x="${x}" y="${y}" font-size="${size}" class="tp-t${o.muted ? ' muted' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''} opacity="${op.toFixed(2)}">${str}</text>`;
     const head = (x, y, dir, c) => {
       const p = { right: [[0, 0], [-11, -6], [-11, 6]], up: [[0, 0], [-6, 11], [6, 11]] }[dir];
       return `<polygon points="${p.map(([a, b]) => `${(x + a).toFixed(1)},${(y + b).toFixed(1)}`).join(' ')}" fill="${c}"/>`;
@@ -120,9 +120,9 @@ AF3.kinds.templates = (s) => ({
 
       // ---- the row of z: z, its projection, and the arrow that adds it to every template ----
       const zIn = ramp(st.b, 0, 0.2), zpIn = ramp(st.b, 0.3, 0.5), upA = ramp(st.b, 0.5, 0.65);
-      h += map(65, ROW2 - 35, 70, 20, zcol(0), BLUE, zIn) + txt(100, 372, 19, 'z', zIn, { bold: true })
+      h += map(65, ROW2 - 35, 70, 20, zcol(0), BLUE, zIn) + txt(100, 372, 19, '$z$', zIn, { bold: true })
         + arrow(168, ROW2, 296, ROW2, ramp(st.b, 0.15, 0.3)) + txt(232, ROW2 - 14, 16, 'linear', ramp(st.b, 0.2, 0.35), { muted: true })
-        + map(305, ROW2 - 35, 70, 14, zcol(0), BLUE, zpIn) + txt(340, 372, 19, 'projected z', zpIn, { bold: true })
+        + map(305, ROW2 - 35, 70, 14, zcol(0), BLUE, zpIn) + txt(340, 372, 19, 'projected $z$', zpIn, { bold: true })
         + arrow(CX[1], ROW2 - 52, CX[1], CY + 66, upA) + txt(CX[1] + 14, 232, 16, 'added to', upA, { muted: true, anchor: 'start' }) + txt(CX[1] + 14, 250, 16, 'every template', upA, { muted: true, anchor: 'start' });
 
       // ---- the stacks of template maps ----
@@ -166,10 +166,10 @@ AF3.kinds.templates = (s) => ({
         + [0, 1].map((i) => `<rect x="${BOX.x + 14 + i * 44}" y="${BOX.y + BOX.h - 30}" width="38" height="10" rx="2" fill="${i < fill ? 'var(--accent)' : 'color-mix(in srgb, var(--muted) 30%, transparent)'}"/>`).join('') + '</g>';
 
       // ---- the names of the stacks ----
-      const nm = (x, letter, word, op) => txt(x, 22, 21, `<tspan font-weight="700">${letter}</tspan>  ${word}`, op);
+      const nm = (x, letter, word, op) => txt(x, 22, 21, `$${letter}$ ${word}`, op);
       h += nm(CX[0] + 5, 't', 'templates', ramp(st.a, 0.1, 0.3)) + txt(CX[0] + 5, 44, 15, 'up to 4', ramp(st.a, 0.1, 0.3), { muted: true })
-        + nm(CX[1] + 5, 'v', 'templates + z', ramp(st.b, 0.65, 0.85)) + nm(CX[2] + 5, 'v', 'after the Pairformer', ramp(st.c, 0.75, 0.95))
-        + nm(U_CX, 'u', 'one map', ramp(st.d, 0.85, 1)) + txt(U_CX, 44, 15, 'same shape as z', ramp(st.d, 0.85, 1), { muted: true });
+        + nm(CX[1] + 5, 'v', 'templates + $z$', ramp(st.b, 0.65, 0.85)) + nm(CX[2] + 5, 'v', 'after the Pairformer', ramp(st.c, 0.75, 0.95))
+        + nm(U_CX, 'u', 'one map', ramp(st.d, 0.85, 1)) + txt(U_CX, 44, 15, 'same shape as $z$', ramp(st.d, 0.85, 1), { muted: true });
       // what the grids are
       h += ['Each grid: one cell', 'for every pair of tokens.', 'The depth is the channels.'].map((l, i) => txt(30, 214 + i * 18, 15, l, ramp(st.a, 0.5 + 0.1 * i, 0.8 + 0.1 * i), { muted: true, anchor: 'start' })).join('');
 
@@ -177,18 +177,18 @@ AF3.kinds.templates = (s) => ({
       const e1 = ramp(st.e, 0, 0.2), eu = ramp(st.e, 0.15, 0.6), e2 = ramp(st.e, 0.6, 0.8), e3 = ramp(st.e, 0.7, 1);
       if (st.e > 0) {
         const ux = lerp(U_XY[0] + 50, EQ.u, eu), uy = lerp(U_XY[1] + 26, ROW2, eu);   // u's copy comes down from above
-        h += map(EQ.z - 35, ROW2 - 35, 70, 20, zcol(0), BLUE, e1) + txt(EQ.z, 372, 19, 'z', e1, { bold: true })
+        h += map(EQ.z - 35, ROW2 - 35, 70, 20, zcol(0), BLUE, e1) + txt(EQ.z, 372, 19, '$z$', e1, { bold: true })
           + plus((EQ.z + EQ.u) / 2 + 10, ROW2, e1)
-          + map(ux - 35, uy - 35, 70, 20, tcol(0, { tint: 1, con: 1, mean: 1, proj: 1 }), lerpColor(NEAR, TEAL, 0.35), ramp(st.e, 0.1, 0.25)) + txt(EQ.u, 372, 19, 'u', eu, { bold: true })
+          + map(ux - 35, uy - 35, 70, 20, tcol(0, { tint: 1, con: 1, mean: 1, proj: 1 }), lerpColor(NEAR, TEAL, 0.35), ramp(st.e, 0.1, 0.25)) + txt(EQ.u, 372, 19, '$u$', eu, { bold: true })
           + equals((EQ.u + EQ.n) / 2 + 10, ROW2, e2)
-          + map(EQ.n - 35, ROW2 - 35, 70, 20, zcol(e3), BLUE, e2) + txt(EQ.n, 372, 19, 'z + u', e2, { bold: true });
+          + map(EQ.n - 35, ROW2 - 35, 70, 20, zcol(e3), BLUE, e2) + txt(EQ.n, 372, 19, '$z + u$', e2, { bold: true });
       }
       svg.innerHTML = h;
     };
 
     frame.innerHTML = `<h2 class="deck-heading">${esc(AF3.plain(title.paras[0]))}</h2>
       <div class="tp-wrap"><svg viewBox="0 0 1000 385" role="img" aria-label="Inside the template module: template pair maps get z added, go through a small Pairformer one at a time, are averaged into u, and u is added to z"></svg></div>
-      <div class="tp-caps">${CAPTIONS.map((c, i) => `<p class="tp-cap reveal-in" data-show="${i + 1}">${esc(c)}</p>`).join('')}</div>
+      <div class="tp-caps">${CAPTIONS.map((c, i) => `<p class="tp-cap reveal-in" data-show="${i + 1}">${AF3.rich(c, esc)}</p>`).join('')}</div>
       ${AF3.arch.mini(s.n, AF3.plain(title.paras[0]).length)}`;
     const svg = frame.querySelector('svg');
 

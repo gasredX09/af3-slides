@@ -22,13 +22,13 @@ const LINE = 'rgba(0,0,0,.3)';   // grid lines: the fills are pastel in both the
 
 // geometry of the four tensors, in map units (the map is 1000 x 470)
 const S = { comp: 's', letter: 's', color: '#f2b8e6', x0: 240, y0: 62, cols: 5, rows: 7, cw: 22, ch: 22, hi: 2,
-  across: ['N', 'tokens'], down: ['c', 'token', ' = 384'], note: ['one vector', 'per token'] };
+  across: 'N_{\\mathrm{tokens}}', down: 'c_{\\mathrm{token}} = 384', note: ['one vector', 'per token'] };
 const Z = { comp: 'z', letter: 'z', color: '#a9d8f2', x0: 650, y0: 100, cols: 4, rows: 4, cw: 26, ch: 26, dx: 26, dy: -26, hi: [1, 2],
-  across: ['N', 'tokens'], down: ['N', 'tokens'], depth: ['c', 'z', ' = 128'], note: ['one vector', 'per pair (i, j)'] };
+  across: 'N_{\\mathrm{tokens}}', down: 'N_{\\mathrm{tokens}}', depth: 'c_z = 128', note: ['one vector', 'per pair $(i, j)$'] };
 const Q = { comp: 'q', letter: 'q', color: '#c27bc9', x0: 210, y0: 306, cols: 9, rows: 5, cw: 20, ch: 20, hi: 4,
-  across: ['N', 'atoms'], down: ['c', 'atom', ' = 128'], note: ['one vector', 'per atom'] };
+  across: 'N_{\\mathrm{atoms}}', down: 'c_{\\mathrm{atom}} = 128', note: ['one vector', 'per atom'] };
 const P = { comp: 'p', letter: 'p', color: '#1a8fd0', x0: 636, y0: 314, cols: 9, rows: 9, cw: 14, ch: 14, dx: 10, dy: -10, hi: [3, 5],
-  across: ['N', 'atoms'], down: ['N', 'atoms'], depth: ['c', 'atompair', ' = 16'], note: ['one vector', 'per pair of atoms'] };
+  across: 'N_{\\mathrm{atoms}}', down: 'N_{\\mathrm{atoms}}', depth: 'c_{\\mathrm{atompair}} = 16', note: ['one vector', 'per pair of atoms'] };
 
 AF3.kinds.representations = (s) => ({
   steps: 4,
@@ -50,29 +50,30 @@ AF3.kinds.representations = (s) => ({
       meta.push({ comp, a, b });
       return `<${tag} data-k="${meta.length - 1}" ${attrs} opacity="0">${inner}</${tag}>`;
     };
-    const label = (parts) => parts.map((t, i) => (i === 1 ? `<tspan dy="4" font-size="75%">${t}</tspan>` : i === 2 ? `<tspan dy="-4">${t}</tspan>` : t)).join('');
+    // a formula (the tensor's letter, a size) in KaTeX, registered like the other pieces; rot: turned a quarter, to run up a bracket
+    const mathBox = (x, y, size, src, o, comp, a, b, rot = '') => reg('foreignObject', AF3.foAttrs(rot ? 0 : x, rot ? 0 : y, size, o) + rot, comp, a, b, AF3.foInner(AF3.tex(src), size, o));
     const text = (x, y, size, cls, comp, a, b, str, extra = '') =>
       reg('text', `x="${x}" y="${y}" font-size="${size}" class="rp-t ${cls}" ${extra}`, comp, a, b, str);
     const poly = (pts, fill, comp, a, b) => reg('polygon', `points="${pts.map((p) => p.join(',')).join(' ')}" fill="${fill}" stroke="${LINE}" stroke-width="1"`, comp, a, b);
     const seg = (x1, y1, x2, y2, comp, a, b, stroke = LINE, w = 1) => reg('path', `d="M${x1} ${y1} L${x2} ${y2}" stroke="${stroke}" stroke-width="${w}" fill="none"`, comp, a, b);
     const brace = (pts, comp, a, b) => reg('path', `d="M${pts.map((p) => p.join(' ')).join(' L')}" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"`, comp, a, b);
-    const note = (T, x, y, a, b) => {
-      const lines = T.note.map((l, i) => `<tspan x="${x}" dy="${i ? 24 : 0}">${l}</tspan>`).join('');
-      return reg('text', `x="${x}" y="${y}" font-size="20" class="rp-t acc"`, T.comp, a, b, lines);
+    const note = (T, x, y, a, b) => {   // two lines, the first centred on y (the second may hold a symbol: $(i, j)$)
+      const html = `<div style="line-height:24px;text-align:left">${T.note.map((l) => AF3.rich(l, esc)).join('<br>')}</div>`;
+      return reg('foreignObject', AF3.foAttrs(x, y + 12, 20, { anchor: 'start', w: 260 }), T.comp, a, b, AF3.foInner(html, 20, { anchor: 'start', accent: true, bold: true }));
     };
     const bracketsAndLabels = (T, W, H, a, b) => {
       const { x0, y0 } = T, yb = y0 + H + 8, xl = x0 - 8;
       let g = brace([[x0, yb - 4], [x0, yb], [x0 + W, yb], [x0 + W, yb - 4]], T.comp, a, b)
-        + text(x0 + W / 2, yb + 17, 18, '', T.comp, a, b, label(T.across), 'text-anchor="middle"')
+        + mathBox(x0 + W / 2, yb + 17, 19, T.across, {}, T.comp, a, b)
         + brace([[xl + 4, y0], [xl, y0], [xl, y0 + H], [xl + 4, y0 + H]], T.comp, a, b)
-        + text(0, 0, 18, '', T.comp, a, b, label(T.down), `text-anchor="middle" transform="translate(${xl - 14} ${y0 + H / 2}) rotate(-90)"`);
+        + mathBox(0, 0, 19, T.down, {}, T.comp, a, b, ` transform="translate(${xl - 14} ${y0 + H / 2}) rotate(-90)"`);
       return g;
     };
 
     // a flat tensor (s, q): one column per token or atom, rows for the channels
     const flat = (T) => {
       const { x0, y0, cols, rows, cw, ch, color } = T, W = cols * cw, H = rows * ch;
-      let g = text(x0 + W / 2, y0 - 24, 32, '', T.comp, 0, 0.1, T.letter, `text-anchor="middle" font-weight="700" style="fill:color-mix(in srgb, ${color} 55%, var(--fg))"`);
+      let g = mathBox(x0 + W / 2, y0 - 24, 35, T.letter, { color: `color-mix(in srgb, ${color} 55%, var(--fg))`, w: 80 }, T.comp, 0, 0.1);
       for (let c = 0; c < cols; c++) {
         const a = 0.08 + 0.4 * (c / (cols - 1)), b = a + 0.12;
         g += reg('rect', `x="${x0 + c * cw}" y="${y0}" width="${cw}" height="${H}" fill="${color}" stroke="${LINE}" stroke-width="1"`, T.comp, a, b);
@@ -87,7 +88,7 @@ AF3.kinds.representations = (s) => ({
     // a pair tensor (z, p): a grid over pairs, with the channels as depth behind it
     const cube = (T) => {
       const { x0, y0, cols, rows, cw, ch, color, dx, dy } = T, W = cols * cw, H = rows * ch, layers = 3;
-      let g = text(x0 + (W + dx) / 2, y0 + dy - 24, 32, '', T.comp, 0, 0.1, T.letter, `text-anchor="middle" font-weight="700" style="fill:color-mix(in srgb, ${color} 55%, var(--fg))"`);
+      let g = mathBox(x0 + (W + dx) / 2, y0 + dy - 24, 35, T.letter, { color: `color-mix(in srgb, ${color} 55%, var(--fg))`, w: 80 }, T.comp, 0, 0.1);
       for (let c = 0; c < cols; c++) for (let r = 0; r < rows; r++) {
         const a = 0.08 + 0.36 * ((c + r) / (cols + rows - 2)), b = a + 0.14;
         g += reg('rect', `x="${x0 + c * cw}" y="${y0 + r * ch}" width="${cw}" height="${ch}" fill="${color}" stroke="${LINE}" stroke-width="1"`, T.comp, a, b);
@@ -104,7 +105,7 @@ AF3.kinds.representations = (s) => ({
       // the depth label, along the depth edge at the bottom right
       const bx = x0 + W + 8, by = y0 + H + 8;
       g += brace([[bx, by], [bx + dx, by + dy]], T.comp, 0.64, 0.76)
-        + text(bx + dx + 10, by + dy + 2, 18, '', T.comp, 0.64, 0.76, label(T.depth));
+        + mathBox(bx + dx + 10, by + dy + 2, 19, T.depth, { anchor: 'start' }, T.comp, 0.64, 0.76);
       const [hc, hr] = T.hi;
       g += reg('rect', `x="${x0 + hc * cw}" y="${y0 + hr * ch}" width="${cw}" height="${ch}" fill="var(--accent)" fill-opacity=".35" stroke="var(--accent)" stroke-width="3"`, T.comp, 0.78, 0.88);
       g += note(T, x0 + W + dx + 34, y0 + H / 2 - 28 + dy / 2, 0.86, 0.98);

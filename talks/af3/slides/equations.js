@@ -51,8 +51,8 @@ AF3.kinds.equations = (s) => ({
     const fwd = String.raw`\htmlClass{k kc}{x_\sigma} \;=\; \htmlClass{k ka}{x_0} \;+\; \htmlClass{k kb}{\sigma\,\epsilon}`;
     const rev = String.raw`dx \;=\; \htmlClass{k kt}{-g(t)^{2}}\,\htmlClass{k ks}{\nabla_x \log p_t(x \mid s, z)}\,\htmlClass{k kt}{dt} \;+\; \htmlClass{k kn}{g(t)\,d\bar{W}_t}`;
     const bridge = String.raw`\nabla_x \log p(x;\sigma) \;=\; \dfrac{D(x;\sigma) - x}{\sigma^{2}}`;
-    const tex = (src, opts = {}) => katex.renderToString(src, { displayMode: false, throwOnError: true, trust: true, strict: 'ignore', ...opts });
-    const leg = (color, head, body, sub) => `<div style="--c:var(${color})"><b>${head}</b>${body}${sub ? `<span class="sub">${sub}</span>` : ''}</div>`;
+    const tex = (src, opts = {}) => AF3.tex(src, !!opts.displayMode);   // the shared KaTeX (cached; inline math sized like the math in the captions)
+    const leg = (color, head, body, sub) => `<div style="--c:var(${color})"><b>${head}</b>${AF3.rich(body, esc)}${sub ? `<span class="sub">${AF3.rich(sub, esc)}</span>` : ''}</div>`;   // body and sub: text with $math$
     const m = (src) => tex(src);
 
     frame.innerHTML = `<h2 class="deck-heading">${esc(AF3.plain(title.paras[0]))}</h2>
@@ -63,9 +63,9 @@ AF3.kinds.equations = (s) => ({
         <div class="eq-math">${tex(fwd, { displayMode: true })}</div>
         <div class="eq-legend reveal-in" data-show="2">
           ${leg('--plot-4', `${m('x_\\sigma')}`, 'the noisy structure: what the network is shown')}
-          ${leg('--plot-3', `${m('x_0')}`, 'the real structure: x, y, z (in Å) of every heavy atom')}
-          ${leg('--plot-5', `${m('\\sigma\\,\\epsilon')}`, 'random Gaussian noise; σ sets how loud it is',
-            `AF3 draws σ at random in training: 16 Å · exp(−1.2 + 1.5 N(0,1))`)}
+          ${leg('--plot-3', `${m('x_0')}`, 'the real structure: $x$, $y$, $z$ (in Å) of every heavy atom')}
+          ${leg('--plot-5', `${m('\\sigma\\,\\epsilon')}`, 'random Gaussian noise; $\\sigma$ sets how loud it is',
+            'AF3 draws $\\sigma$ at random in training: $16\\,\\text{\\AA} \\cdot \\exp(-1.2 + 1.5\\,\\mathcal{N}(0, 1))$')}
         </div>
       </div>
 
@@ -73,16 +73,16 @@ AF3.kinds.equations = (s) => ({
         <p class="eq-tag">Reverse<span>turn noise back into a structure, one small step at a time</span></p>
         <div class="eq-math rev">${tex(rev, { displayMode: true })}</div>
         <div class="eq-legend reveal-in" data-show="4">
-          ${leg('--plot-3', `the score ${m('\\nabla_x \\log p_t(x \\mid s, z)')}`, 'the direction that makes the structure more likely, given what the trunk worked out (s, z)')}
-          ${leg('--plot-2', `the step ${m('-g(t)^{2}\\,dt')}`, 'a small move in that direction: dt is a small slice of time')}
+          ${leg('--plot-3', `the score ${m('\\nabla_x \\log p_t(x \\mid s, z)')}`, 'the direction that makes the structure more likely, given what the trunk worked out ($s$, $z$)')}
+          ${leg('--plot-2', `the step ${m('-g(t)^{2}\\,dt')}`, 'a small move in that direction: $dt$ is a small slice of time')}
           ${leg('--plot-5', `the kick ${m('g(t)\\,d\\bar{W}_t')}`, 'a small random push, so repeated runs give different structures')}
         </div>
       </div>
 
       <div class="eq-bridge reveal-in" data-from="5">
-        <p><b>Where the score comes from:</b> a network trained to remove the noise. For an ideal denoiser <i>D</i>, the score is how far it moves the structure, divided by the noise level squared.</p>
+        <p><b>Where the score comes from:</b> a network trained to remove the noise. For an ideal denoiser ${m('D')}, the score is how far it moves the structure, divided by the noise level squared.</p>
         <div class="math">${tex(bridge, { displayMode: true })}</div>
-        <p class="af3"><b>In AF3</b> the denoiser predicts clean atom coordinates, conditioned on the trunk\u2019s s and z, and sampling takes 200 such steps from pure noise.</p>
+        <p class="af3"><b>In AF3</b> the denoiser predicts clean atom coordinates, conditioned on the trunk\u2019s ${m('s')} and ${m('z')}, and sampling takes 200 such steps from pure noise.</p>
       </div>`;
 
     return {

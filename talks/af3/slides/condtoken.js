@@ -43,12 +43,12 @@ const NS = { x: 30, y: 4 };                                                     
 const BUS = 802, OUT_X = 826, OUT_W = 164;
 
 const CAPTIONS = [
-  'The diffusion module starts from what the trunk produced, s_trunk and z_trunk, plus the input features s_inputs and a relative position encoding, and it is told how noisy its input is.',
-  'Single conditioning: s_trunk and s_inputs are joined side by side. A layer norm and a linear layer bring them back to one vector of 384 numbers per token.',
+  'The diffusion module starts from what the trunk produced, $s_{\\mathrm{trunk}}$ and $z_{\\mathrm{trunk}}$, plus the input features $s_{\\mathrm{inputs}}$ and a relative position encoding, and it is told how noisy its input is.',
+  'Single conditioning: $s_{\\mathrm{trunk}}$ and $s_{\\mathrm{inputs}}$ are joined side by side. A layer norm and a linear layer bring them back to one vector of 384 numbers per token.',
   'The noise level becomes 256 numbers (a Fourier embedding: cosines of fixed random frequencies). A linear layer turns them into one vector, which is added to every token.',
-  'Two Transition layers refine s. Each one is added back to s.',
-  'Pair conditioning: z_trunk and the relative position encoding are joined, then a layer norm and a linear layer bring them back to 128 numbers per pair, and two Transition layers follow.',
-  'The new s and z go on to the atom encoder, which hands them to the atoms (next slide), and to the 24 blocks of the diffusion transformer.',
+  'Two Transition layers refine $s$. Each one is added back to $s$.',
+  'Pair conditioning: $z_{\\mathrm{trunk}}$ and the relative position encoding are joined, then a layer norm and a linear layer bring them back to 128 numbers per pair, and two Transition layers follow.',
+  'The new $s$ and $z$ go on to the atom encoder, which hands them to the atoms (next slide), and to the 24 blocks of the diffusion transformer.',
 ];
 
 AF3.kinds.condtoken = (s) => ({
@@ -81,7 +81,8 @@ AF3.kinds.condtoken = (s) => ({
     const ZONE = Array.from({ length: N }, () => Array.from({ length: N }, () => rand())), ZFIN = Array.from({ length: N }, () => Array.from({ length: N }, () => rand()));
 
     // ---- helpers ----
-    const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : `<text x="${x}" y="${y}" font-size="${size}" class="ct-t${o.muted ? ' muted' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''}${o.fill ? ` style="fill:${o.fill}"` : ''} opacity="${op.toFixed(2)}">${str}</text>`;
+    const mtxt = (x, y, size, str, op, o = {}) => AF3.svgRich(x, y, size, str, { ...o, op });   // a label with math: KaTeX between dollar signs
+    const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : String(str).includes('$') ? mtxt(x, y, size, str, op, { ...o, color: o.fill || o.color }) : `<text x="${x}" y="${y}" font-size="${size}" class="ct-t${o.muted ? ' muted' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''}${o.fill ? ` style="fill:${o.fill}"` : ''} opacity="${op.toFixed(2)}">${str}</text>`;
     const rect = (x, y, w, h, fill, stroke, sw, op = 1, rx = 0) => op < 0.01 ? '' : `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}"${rx ? ` rx="${rx}"` : ''} fill="${fill}" stroke="${stroke}" stroke-width="${sw}" opacity="${op.toFixed(2)}"/>`;
     const bars = (x, y, w, h, vals, col) => {
       const bh = 4, gap = 1.5, y0 = y + (h - (C * bh + (C - 1) * gap)) / 2;
@@ -115,9 +116,9 @@ AF3.kinds.condtoken = (s) => ({
 
       // ---- step 1: the inputs (the noise level is a gauge along the top) ----
       const i1 = ramp(a, 0, 0.35);
-      h += column(S_TR, STR, S_BG, S_BAR, i1) + txt(S_TR.x + CW / 2, 182, 12.5, 's_trunk', i1 * (1 - ramp(b, 0.1, 0.3)), { bold: true });
-      h += column(S_IN, SIN, I_BG, I_BAR, ramp(a, 0.1, 0.4)) + txt(S_IN.x + CW / 2, 182, 12.5, 's_inputs', ramp(a, 0.1, 0.4) * (1 - ramp(b, 0.1, 0.3)), { bold: true });
-      h += zgrid(Z_TR, zc(ZV, Z_BASE), ramp(a, 0.3, 0.65)) + txt(Z_TR.x + (N * G) / 2, Z_TR.y + N * G + 17, 12.5, 'z_trunk', ramp(a, 0.3, 0.65), { bold: true });
+      h += column(S_TR, STR, S_BG, S_BAR, i1) + txt(S_TR.x + CW / 2, 182, 14.5, '$s_{\\mathrm{trunk}}$', i1 * (1 - ramp(b, 0.1, 0.3)));
+      h += column(S_IN, SIN, I_BG, I_BAR, ramp(a, 0.1, 0.4)) + txt(S_IN.x + CW / 2, 182, 14.5, '$s_{\\mathrm{inputs}}$', ramp(a, 0.1, 0.4) * (1 - ramp(b, 0.1, 0.3)));
+      h += zgrid(Z_TR, zc(ZV, Z_BASE), ramp(a, 0.3, 0.65)) + txt(Z_TR.x + (N * G) / 2, Z_TR.y + N * G + 17, 14.5, '$z_{\\mathrm{trunk}}$', ramp(a, 0.3, 0.65));
       h += zgrid(Z_RP, zc(RV, R_BASE), ramp(a, 0.4, 0.75)) + txt(Z_RP.x + (N * G) / 2, Z_RP.y + N * G + 17, 12.5, 'relative position', ramp(a, 0.4, 0.75), { bold: true }) + txt(Z_RP.x + (N * G) / 2, Z_RP.y + N * G + 32, 12.5, 'encoding', ramp(a, 0.4, 0.75), { bold: true });
       const gauge = ramp(a, 0.55, 0.9);
       const tNow = lerp(T0, T1, ramp(c, 0.05, 0.85)), tMark = 1 - (tNow - T1) / (T0 - T1);                          // the marker moves from high noise to low
@@ -135,7 +136,7 @@ AF3.kinds.condtoken = (s) => ({
       const sOp = ramp(b, 0.75, 1);
       const sNow = SONE.map((v, i) => v.map((x, k) => lerp(x, SAFTER[i][k], ramp(c, 0.6, 0.95))));                // after the noise level has been added
       const sNow2 = sNow.map((v, i) => v.map((x, k) => lerp(x, SFIN[i][k], ramp(d, 0.5, 0.9))));                   // after the Transition layers
-      h += column(S_ONE, sNow, S_BG, S_BAR, sOp) + txt(S_ONE.x + CW / 2, 182, 12.5, 's', sOp, { bold: true }) + txt(S_ONE.x + CW / 2, 197, 12, '384 numbers', sOp, { muted: true });
+      h += column(S_ONE, sNow, S_BG, S_BAR, sOp) + txt(S_ONE.x + CW / 2, 182, 15, '$s$', sOp) + txt(S_ONE.x + CW / 2, 197, 12, '384 numbers', sOp, { muted: true });
 
       // ---- step 3: the noise level, a Fourier embedding, a linear layer, added to every token ----
       const f3 = ramp(c, 0.05, 0.3), f4 = ramp(c, 0.3, 0.55);
@@ -160,10 +161,10 @@ AF3.kinds.condtoken = (s) => ({
 
       // ---- step 4: two Transition layers on s ----
       const tr = ramp(d, 0, 0.35);
-      h += arrow(S_ONE.x + CW + 14, AY, TR_S.x - 8, AY, tr) + box(TR_S, 'Transition', '× 2, added back', tr);
+      h += arrow(S_ONE.x + CW + 14, AY, TR_S.x - 8, AY, tr) + box(TR_S, 'Transition', '$\\times 2$, added back', tr);
       h += arrow(TR_S.x + TR_S.w + 8, AY, S_FIN.x - 10, AY, ramp(d, 0.45, 0.7));
       const sf = ramp(d, 0.6, 0.95);
-      h += column(S_FIN, sNow2, S_BG, S_BAR, sf) + txt(S_FIN.x + CW / 2, 182, 12.5, 's', sf, { bold: true }) + txt(S_FIN.x + CW / 2, 197, 12, 'for diffusion', sf, { muted: true });
+      h += column(S_FIN, sNow2, S_BG, S_BAR, sf) + txt(S_FIN.x + CW / 2, 182, 15, '$s$', sf) + txt(S_FIN.x + CW / 2, 197, 12, 'for diffusion', sf, { muted: true });
 
       // ---- step 5: pair conditioning ----
       const j5 = ramp(e, 0, 0.3), m5 = ramp(e, 0.15, 0.5), l5 = ramp(e, 0.5, 0.8);
@@ -173,26 +174,26 @@ AF3.kinds.condtoken = (s) => ({
       h += txt(Z_CAT.x + 44, Z_TR.y + N * G + 17, 12.5, 'joined', ramp(e, 0.45, 0.7), { bold: true });
       h += arrow(Z_CAT.x + N * G + 28, Z_TR.y + 40, Z_ONE.x - 10, Z_TR.y + 40, l5) + txt((Z_CAT.x + N * G + 28 + Z_ONE.x) / 2, Z_TR.y + 14, 12, 'layer norm,', l5, { muted: true }) + txt((Z_CAT.x + N * G + 28 + Z_ONE.x) / 2, Z_TR.y + 28, 12, 'linear', l5, { muted: true });
       const zOp = ramp(e, 0.7, 0.95);
-      h += zgrid(Z_ONE, (r, cc) => zc(ZONE, Z_BASE)(r, cc), zOp) + txt(Z_ONE.x + (N * G) / 2, Z_ONE.y + N * G + 17, 12.5, 'z', zOp, { bold: true }) + txt(Z_ONE.x + (N * G) / 2, Z_ONE.y + N * G + 32, 12, '128 numbers', zOp, { muted: true });
+      h += zgrid(Z_ONE, (r, cc) => zc(ZONE, Z_BASE)(r, cc), zOp) + txt(Z_ONE.x + (N * G) / 2, Z_ONE.y + N * G + 17, 15, '$z$', zOp) + txt(Z_ONE.x + (N * G) / 2, Z_ONE.y + N * G + 32, 12, '128 numbers', zOp, { muted: true });
       const trz = ramp(e, 0.85, 1);
-      h += arrow(Z_ONE.x + N * G + 14, Z_TR.y + 40, TR_Z.x - 8, Z_TR.y + 40, trz) + box(TR_Z, 'Transition', '× 2, added back', trz);
+      h += arrow(Z_ONE.x + N * G + 14, Z_TR.y + 40, TR_Z.x - 8, Z_TR.y + 40, trz) + box(TR_Z, 'Transition', '$\\times 2$, added back', trz);
 
       // ---- step 6: both go on ----
       const z6 = ramp(f, 0, 0.35);
       h += arrow(TR_Z.x + TR_Z.w + 8, Z_TR.y + 40, Z_FIN.x - 10, Z_TR.y + 40, z6);
-      h += zgrid(Z_FIN, (r, cc) => zc(ZFIN, Z_BASE)(r, cc), ramp(f, 0.15, 0.5)) + txt(Z_FIN.x + (N * G) / 2, Z_FIN.y + N * G + 17, 12.5, 'z', ramp(f, 0.15, 0.5), { bold: true }) + txt(Z_FIN.x + (N * G) / 2, Z_FIN.y + N * G + 32, 12, 'for diffusion', ramp(f, 0.15, 0.5), { muted: true });
+      h += zgrid(Z_FIN, (r, cc) => zc(ZFIN, Z_BASE)(r, cc), ramp(f, 0.15, 0.5)) + txt(Z_FIN.x + (N * G) / 2, Z_FIN.y + N * G + 17, 15, '$z$', ramp(f, 0.15, 0.5)) + txt(Z_FIN.x + (N * G) / 2, Z_FIN.y + N * G + 32, 12, 'for diffusion', ramp(f, 0.15, 0.5), { muted: true });
       const bus = ramp(f, 0.4, 0.7);
       h += `<g opacity="${bus.toFixed(2)}"><path d="M${S_FIN.x + CW + 10} ${AY} H${BUS} V${Z_TR.y + 40} H${Z_FIN.x + N * G + 12}" fill="none" stroke="var(--accent)" stroke-width="2.5"/></g>`;
       const bx = ramp(f, 0.6, 0.95);
       h += arrow(BUS, AY, OUT_X - 6, AY, bx) + arrow(BUS, Z_TR.y + 40, OUT_X - 6, Z_TR.y + 40, bx);
-      h += box({ x: OUT_X, y: AY - 30, w: OUT_W, h: 60 }, 'Atom encoder', 'hands s and z to the atoms', bx) + box({ x: OUT_X, y: Z_TR.y + 10, w: OUT_W, h: 60 }, 'Diffusion transformer', '24 blocks', bx);
+      h += box({ x: OUT_X, y: AY - 30, w: OUT_W, h: 60 }, 'Atom encoder', 'hands $s$ and $z$ to the atoms', bx) + box({ x: OUT_X, y: Z_TR.y + 10, w: OUT_W, h: 60 }, 'Diffusion transformer', '24 blocks', bx);
       h += txt(990, 372, 12, 'toy sizes: 5 tokens, 3 numbers for a vector', 1, { anchor: 'end', muted: true });
       svg.innerHTML = h;
     };
 
     frame.innerHTML = `<h2 class="deck-heading">${esc(heading)}</h2>
       <div class="ct-wrap"><svg viewBox="0 0 1000 395" role="img" aria-label="How the diffusion module is conditioned at the token level: s_trunk and s_inputs are joined and passed through a layer norm and a linear layer; the noise level becomes a Fourier embedding, a linear layer, and is added to every token; two Transition layers follow; z_trunk and the relative position encoding are joined and passed through a layer norm, a linear layer and two Transition layers; s and z go to the atom encoder and the diffusion transformer"></svg></div>
-      <div class="ct-caps">${CAPTIONS.map((t, i) => `<p class="ct-cap reveal-in" data-show="${i + 1}">${esc(t)}</p>`).join('')}</div>
+      <div class="ct-caps">${CAPTIONS.map((t, i) => `<p class="ct-cap reveal-in" data-show="${i + 1}">${AF3.rich(t, esc)}</p>`).join('')}</div>
       ${AF3.arch.mini(s.n, heading.length)}`;
     const svg = frame.querySelector('svg');
 

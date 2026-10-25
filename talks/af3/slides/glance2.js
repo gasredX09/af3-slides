@@ -8,7 +8,7 @@
 //   last click   the outputs
 //
 // All the content is the pptx slides' own, shortened: the sentences are the "what it does" lines of the cards with the tensor
-// shapes (N_tok x 384 ...) left out, and the summary is the first paragraph in one line. The shapes are on slides 17, 26 and 27.
+// shapes (N_tok x 384 ...) left out; the symbols in the sentences are KaTeX ($...$, AF3.rich), and the summary is the first paragraph in one line. The shapes are on slides 17, 26 and 27.
 // To get the cards back, set the slide's kind to 'glance' in plan.js.
 {
 const COLOR = { s: '#f2b8e6', z: '#a9d8f2', m: '#f7b97c', t: '#3e9b7a', c: '#c27bc9', x: '#5f6368', conf: '#c00000', seq: '#dadce0', db: '#dadce0', '3d': '#dadce0' };
@@ -18,7 +18,7 @@ const LINE = 'rgba(0,0,0,.3)';
 
 // a small picture for each kind of tensor (56 x 44)
 const icon = (kind, letter) => {
-  const c = COLOR[kind] || COLOR.s, t = (x, y) => `<text x="${x}" y="${y}" text-anchor="middle" font-size="17" font-weight="700" fill="${ink(c)}" style="font-family:Lato,sans-serif">${letter || ''}</text>`;
+  const c = COLOR[kind] || COLOR.s, t = (x, y) => (letter ? AF3.svgMath(x, y - 5, 19, letter, { color: ink(c), w: 40 }) : '');
   let g;
   if (kind === 's') g = `<rect x="18" y="2" width="20" height="40" rx="3" fill="${c}" stroke="${LINE}"/><path d="M28 2V42M18 14H38M18 28H38" stroke="${LINE}" fill="none"/>${t(28, 27)}`;
   else if (kind === 'z' || kind === 'm' || kind === 't') g = `<polygon points="8,12 18,3 50,3 40,12" fill="${c}" fill-opacity=".7" stroke="${LINE}"/><polygon points="40,12 50,3 50,31 40,40" fill="${c}" fill-opacity=".55" stroke="${LINE}"/><rect x="8" y="12" width="32" height="28" fill="${c}" stroke="${LINE}"/>${t(24, 31)}`;
@@ -38,10 +38,10 @@ const DATA = {
     machine: 'Input preparation',
     steps: [
       ['Tokenize', 'A standard residue is one token. A modified residue or a ligand gets one token per atom.'],
-      ['Build m and t', 'Aligned similar sequences become m. Template distograms from similar structures become t.'],
-      ['Embed atoms', 'Conformer features become the atom tensors q, c and p.'],
-      ['Update atoms', 'The Atom Transformer (3 blocks) refines q.'],
-      ['Pool to tokens', 'Average the atoms of each token into s. Build the pair tensor z from sᵢ + sⱼ, relative position and bonds.'],
+      ['Build $m$ and $t$', 'Aligned similar sequences become $m$. Template distograms from similar structures become $t$.'],
+      ['Embed atoms', 'Conformer features become the atom tensors $q$, $c$ and $p$.'],
+      ['Update atoms', 'The Atom Transformer (3 blocks) refines $q$.'],
+      ['Pool to tokens', 'Average the atoms of each token into $s$. Build the pair tensor $z$ from $s_i + s_j$, relative position and bonds.'],
     ],
     out: [['s', 's', 'Token features', 'one vector per token'], ['z', 'z', 'Pair features', 'one per pair of tokens'], ['m', 'm', 'MSA', 'to the MSA module'], ['t', 't', 'Templates', 'to the template module']],
     outCap: 'Every molecule type now sits on one token grid that the trunk can process.',
@@ -51,24 +51,24 @@ const DATA = {
     inn: [['s', 's', 'Token features', 'one per token'], ['z', 'z', 'Pair features', 'one per token pair'], ['m', 'm', 'MSA', 'related sequences'], ['t', 't', 'Templates', 'similar structures']],
     machine: 'Representation learning',
     steps: [
-      ['Template module', 'Each template is embedded with z, averaged, and added to z.', '2 blocks', [1, 3]],
-      ['MSA module', 'Related sequences show which positions co-evolve. That is written into z, and then m is dropped.', '4 blocks', [1, 2]],
-      ['Pairformer', 'Triangle updates refine z. Attention biased by z refines s.', '48 blocks', [0, 1]],
-      ['Recycling', 'Feed s and z back in and run the trunk again.', '', [0, 1]],
+      ['Template module', 'Each template is embedded with $z$, averaged, and added to $z$.', '2 blocks', [1, 3]],
+      ['MSA module', 'Related sequences show which positions co-evolve. That is written into $z$, and then $m$ is dropped.', '4 blocks', [1, 2]],
+      ['Pairformer', 'Triangle updates refine $z$. Attention biased by $z$ refines $s$.', '48 blocks', [0, 1]],
+      ['Recycling', 'Feed $s$ and $z$ back in and run the trunk again.', '', [0, 1]],
     ],
     loop: { from: 0, to: 2, at: 4, label: 'again' },
-    out: [['s', 's', 's trunk', 'context for each token'], ['z', 'z', 'z trunk', 'which tokens interact']],
-    outCap: 'The pair picture z trunk is the main input to structure prediction.',
+    out: [['s', 's', '$s_{\\mathrm{trunk}}$', 'context for each token'], ['z', 'z', '$z_{\\mathrm{trunk}}$', 'which tokens interact']],
+    outCap: 'The pair picture $z_{\\mathrm{trunk}}$ is the main input to structure prediction.',
   },
   43: {
     sum: 'From noise to a 3D structure, with confidence scores.',
     inn: [['s', 's', 'Token features', 'from the trunk'], ['z', 'z', 'Pair features', 'from the trunk'], ['c', 'c', 'Atom features', 'from the conformers'], ['x', '', 'Noisy coordinates', 'pure random noise']],
     machine: 'Structure prediction',
     steps: [
-      ['Condition', 'Combine s trunk, z trunk, s inputs and the noise level into conditioning tensors.', '', [0, 1]],
-      ['Atom encoder', 'Atoms to tokens: the noisy coordinates become atom tensors, pooled into token features a.', '3 blocks', [2, 3]],
-      ['Diffusion transformer', 'Most of the reasoning: it refines a, using pair bias from z.', '24 blocks', [1]],
-      ['Atom decoder', 'Back to atoms: a denoised x. This whole loop repeats for about 200 steps.', '3 blocks', [3]],
+      ['Condition', 'Combine $s_{\\mathrm{trunk}}$, $z_{\\mathrm{trunk}}$, $s_{\\mathrm{inputs}}$ and the noise level into conditioning tensors.', '', [0, 1]],
+      ['Atom encoder', 'Atoms to tokens: the noisy coordinates become atom tensors, pooled into token features $a$.', '3 blocks', [2, 3]],
+      ['Diffusion transformer', 'Most of the reasoning: it refines $a$, using pair bias from $z$.', '24 blocks', [1]],
+      ['Atom decoder', 'Back to atoms: a denoised $x$. This whole loop repeats for about 200 steps.', '3 blocks', [3]],
       ['Confidence module', 'Scores each final structure.', '4 blocks', []],
     ],
     loop: { from: 1, to: 3, at: 4, label: '× 200' },
@@ -91,7 +91,7 @@ AF3.kinds.glance2 = (s) => {
         .g2-chip.dim { opacity: .35; }
         .g2-chip svg { flex: none; width: 4.8em; height: auto; font-size: var(--u); }
         .g2-chip b { display: block; font-size: var(--t-small); line-height: 1.15; }
-        .g2-chip span { display: block; font-size: var(--t-caption); color: var(--muted); line-height: 1.2; margin-top: .15em; }
+        .g2-chip .sub { display: block; font-size: var(--t-caption); color: var(--muted); line-height: 1.2; margin-top: .15em; }
         .g2-link { text-align: center; font-size: var(--t-lead); color: var(--muted); }
         .g2-machine { position: relative; box-sizing: border-box; padding: 1.2em 4.6em 1.2em 1.2em; border-radius: 1.2em; font-size: var(--u);
           border: 2px solid color-mix(in srgb, var(--accent) 55%, transparent); background: color-mix(in srgb, var(--accent) 6%, transparent); }
@@ -116,20 +116,20 @@ AF3.kinds.glance2 = (s) => {
       `);
       const texts = AF3.texts(s);
       const title = texts.find((t) => t.ph === 'title' || t.ph === 'ctrTitle') || texts.filter((t) => t.g && t.g.y < 0.2).sort((a, b) => a.g.y - b.g.y)[0];
-      const chip = ([k, letter, label, sub]) => `<div class="g2-chip">${icon(k, letter)}<div><b>${esc(label)}</b><span>${esc(sub)}</span></div></div>`;
+      const chip = ([k, letter, label, sub]) => `<div class="g2-chip">${icon(k, letter)}<div><b>${AF3.rich(label, esc)}</b><span class="sub">${AF3.rich(sub, esc)}</span></div></div>`;
       frame.innerHTML = `<h2 class="deck-heading">${esc(AF3.plain(title.paras[0]))}</h2>
         <p class="g2-sum reveal-in" data-from="1">${esc(d.sum)}</p>
         <div class="g2-row">
           <div class="g2-col"><h4 class="reveal-in" data-from="1">Takes in</h4>${d.inn.map((c, i) => `<div class="reveal-in g2-chip-wrap" data-from="1" style="transition-delay:${(0.15 + i * 0.12).toFixed(2)}s">${chip(c)}</div>`).join('')}</div>
           <div class="g2-link reveal-in" data-from="1">→</div>
           <div class="g2-machine reveal-in" data-from="1"><h4>${esc(d.machine)}</h4>
-            <ol class="g2-pills">${d.steps.map(([name, , meta], i) => `<li class="g2-pill"><i>${i + 1}</i>${esc(name)}${meta ? `<small>${esc(meta)}</small>` : ''}</li>`).join('')}</ol>
+            <ol class="g2-pills">${d.steps.map(([name, , meta], i) => `<li class="g2-pill"><i>${i + 1}</i><span>${AF3.rich(name, esc)}</span>${meta ? `<small>${esc(meta)}</small>` : ''}</li>`).join('')}</ol>
             ${d.loop ? `<div class="g2-loop"><span>${esc(d.loop.label)}</span></div>` : ''}</div>
           <div class="g2-link reveal-in" data-from="${n + 2}">→</div>
           <div class="g2-col"><h4 class="reveal-in" data-from="${n + 2}">Outputs</h4>${d.out.map((c, i) => `<div class="reveal-in" data-from="${n + 2}" style="transition-delay:${(0.1 + i * 0.12).toFixed(2)}s">${chip(c)}</div>`).join('')}</div>
         </div>
-        <div class="g2-cap">${d.steps.map(([name, text], i) => `<p class="reveal-in" data-show="${i + 2}"><b>${esc(name)}.</b> ${esc(text)}</p>`).join('')}
-          ${d.outCap ? `<p class="reveal-in" data-show="${n + 2}">${esc(d.outCap)}</p>` : ''}</div>`;
+        <div class="g2-cap">${d.steps.map(([name, text], i) => `<p class="reveal-in" data-show="${i + 2}"><b>${AF3.rich(name, esc)}.</b> ${AF3.rich(text, esc)}</p>`).join('')}
+          ${d.outCap ? `<p class="reveal-in" data-show="${n + 2}">${AF3.rich(d.outCap, esc)}</p>` : ''}</div>`;
 
       const pills = [...frame.querySelectorAll('.g2-pill')], chips = [...frame.querySelectorAll('.g2-col:first-child .g2-chip')];
       const loop = frame.querySelector('.g2-loop'), list = frame.querySelector('.g2-pills'), machine = frame.querySelector('.g2-machine');

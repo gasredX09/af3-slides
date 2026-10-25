@@ -64,19 +64,31 @@ const PAIR = (() => {
   return { noise, target };
 })();
 
-// ---- the toy points of card 3: a helix of 20 points and a ring of 6 with two substituents, each with one fixed noise draw
+// ---- the toy points of card 3: ONE co-folded complex, not two things side by side: a protein helix of 20 points that curls into a cup
+// (8 more points), and a ring of 6 with two substituents sitting in the cup, in contact with the chain. Each point has one fixed noise draw.
 const PTS = (() => {
   const r = rng(3), gauss = () => Math.sqrt(-2 * Math.log(1 - r())) * Math.cos(2 * Math.PI * r());
-  const pts = [], bonds = [];
-  for (let i = 0; i < 20; i++) pts.push({ x: 24 + i * 9.2, y: 134 + 18 * Math.sin(i * 0.9), type: 'p' });
-  for (let i = 0; i < 19; i++) bonds.push([i, i + 1]);
+  const pts = [], bonds = [], contacts = [];
+  for (let i = 0; i < 20; i++) pts.push({ x: 20 + i * 9.37, y: 134 + 16 * Math.sin((i - 19) * 0.9), type: 'p' });   // the helix, ending level with the cup
+  const CUP = { x: 234, y: 134, r: 25 };
+  for (let k = 0; k < 8; k++) {                                                           // the cup: from the left of the ligand, over its top, to the upper right
+    const a = (Math.PI * (180 + k * 21.43)) / 180;
+    pts.push({ x: CUP.x + CUP.r * Math.cos(a), y: CUP.y + CUP.r * Math.sin(a), type: 'p' });
+  }
+  const nProt = pts.length;
+  for (let i = 0; i < nProt - 1; i++) bonds.push([i, i + 1]);
   const c0 = pts.length;
-  for (let k = 0; k < 6; k++) pts.push({ x: 252 + 15 * Math.cos(k * Math.PI / 3), y: 134 + 15 * Math.sin(k * Math.PI / 3), type: 'l' });
+  for (let k = 0; k < 6; k++) pts.push({ x: CUP.x + 13 * Math.cos((k * Math.PI) / 3), y: CUP.y + 13 * Math.sin((k * Math.PI) / 3), type: 'l' });
   for (let k = 0; k < 6; k++) bonds.push([c0 + k, c0 + ((k + 1) % 6)]);
-  pts.push({ x: 279, y: 124, type: 'l' }); bonds.push([c0, c0 + 6]);
-  pts.push({ x: 252, y: 159, type: 'l' }); bonds.push([c0 + 4, c0 + 7]);
+  pts.push({ x: CUP.x + 20, y: CUP.y + 25, type: 'l' }); bonds.push([c0 + 1, c0 + 6]);       // two substituents, pointing out of the cup's open side
+  pts.push({ x: CUP.x - 20, y: CUP.y + 25, type: 'l' }); bonds.push([c0 + 2, c0 + 7]);
+  for (let k = 0; k < 6; k++) {                                                           // contacts: each ring atom with the nearest chain point, if close
+    let best = -1, bd = 1e9;
+    for (let i = 0; i < nProt; i++) { const d = Math.hypot(pts[c0 + k].x - pts[i].x, pts[c0 + k].y - pts[i].y); if (d < bd) { bd = d; best = i; } }
+    if (bd < 20) contacts.push([c0 + k, best]);
+  }
   pts.forEach((q) => { q.ex = gauss(); q.ey = gauss(); });
-  return { pts, bonds };
+  return { pts, bonds, contacts };
 })();
 const NOISE = 62;                                                                   // noise scale at sigma = 1, in map units
 const bondsAt = (sigma) => 1 - ramp(sigma, 0.05, 0.45);
@@ -197,6 +209,8 @@ const make = (swaps) => (s) => ({
         const bx0 = 12, bx1 = 296, by0 = 84, by1 = 186;
         const pos = PTS.pts.map((q) => [Math.max(bx0, Math.min(bx1, q.x + sigma * NOISE * q.ex)), Math.max(by0, Math.min(by1, q.y + sigma * NOISE * q.ey * 0.7))]);
         let c = '';
+        const co = (1 - ramp(sigma, 0.1, 0.55)) * po;   // the contacts come in with the arrangement, a little before the bonds
+        if (co > 0.01) PTS.contacts.forEach(([a, b]) => { c += `<line x1="${pos[a][0].toFixed(1)}" y1="${pos[a][1].toFixed(1)}" x2="${pos[b][0].toFixed(1)}" y2="${pos[b][1].toFixed(1)}" stroke="var(--muted)" stroke-width="1.3" stroke-dasharray="3 3" opacity="${(0.9 * co).toFixed(2)}"/>`; });
         if (bo > 0.01) PTS.bonds.forEach(([a, b]) => { c += `<line x1="${pos[a][0].toFixed(1)}" y1="${pos[a][1].toFixed(1)}" x2="${pos[b][0].toFixed(1)}" y2="${pos[b][1].toFixed(1)}" stroke="var(--muted)" stroke-width="1.8" stroke-linecap="round" opacity="${(bo * po).toFixed(2)}"/>`; });
         PTS.pts.forEach((q, i) => { c += `<circle cx="${pos[i][0].toFixed(1)}" cy="${pos[i][1].toFixed(1)}" r="3.6" fill="${q.type === 'p' ? BLUE : GREEN}" opacity="${po.toFixed(2)}"/>`; });
         c += txt(16, 200, 13, 'toy points, not a prediction', ramp(p, 0.2, 0.4), { anchor: 'start', muted: true });

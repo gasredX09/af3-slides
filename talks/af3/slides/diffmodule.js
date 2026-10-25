@@ -52,11 +52,11 @@ const cx = (x0, k) => x0 + k * CW + CW / 2;
 const tcx = (k) => B0 + k * BW + BW / 2;
 
 const CAPTIONS = [
-  'The diffusion module takes the noisy positions of all atoms, plus s and z from the trunk, and returns positions that are a little less noisy.',
-  'Atoms come first. Each atom picks up the conditioning (s and z) of its own token, and its noisy position is added.',
+  'The diffusion module takes the noisy positions of all atoms, plus $s$ and $z$ from the trunk, and returns positions that are a little less noisy.',
+  'Atoms come first. Each atom picks up the conditioning ($s$ and $z$) of its own token, and its noisy position is added.',
   'The atoms attend to each other, but only to atoms close by in the sequence, in 3 blocks. Attention between all atoms would be far too expensive.',
   'Then the atoms of each token are averaged into one vector for the token. There are far fewer tokens than atoms.',
-  'Now every token can attend to every token, in 24 blocks. z biases the attention and s conditions it. With so few tokens, this is affordable.',
+  'Now every token can attend to every token, in 24 blocks. $z$ biases the attention and $s$ conditions it. With so few tokens, this is affordable.',
   "Each token's vector is passed back to its atoms and added to the atoms' earlier state (the skip link). Local attention runs again.",
   "Each atom's vector becomes an update for that atom's own position. Applying it gives positions that are a little less noisy, and those go into the next step.",
 ];
@@ -89,7 +89,8 @@ AF3.kinds.diffmodule = (s) => ({
 
     // ---- helpers ----
     const zcol = (r, c) => shade(ZBLUE, (ZV[r][c] - 0.5) * 0.35);
-    const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : `<text x="${x}" y="${y}" font-size="${size}" class="dm-t${o.muted ? ' muted' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''}${o.fill ? ` style="fill:${o.fill}"` : ''} opacity="${op.toFixed(2)}">${str}</text>`;
+    const mtxt = (x, y, size, str, op, o = {}) => AF3.svgRich(x, y, size, str, { ...o, op });   // a label with math: KaTeX between dollar signs
+    const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : String(str).includes('$') ? mtxt(x, y, size, str, op, { ...o, color: o.fill || o.color }) : `<text x="${x}" y="${y}" font-size="${size}" class="dm-t${o.muted ? ' muted' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''}${o.fill ? ` style="fill:${o.fill}"` : ''} opacity="${op.toFixed(2)}">${str}</text>`;
     const rect = (x, y, w, h, fill, stroke, sw, op = 1, rx = 0, dash = '') => op < 0.01 ? '' : `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}"${rx ? ` rx="${rx}"` : ''} fill="${fill}" stroke="${stroke}" stroke-width="${sw}"${dash ? ` stroke-dasharray="${dash}"` : ''} opacity="${op.toFixed(2)}"/>`;
     const rot = (str, x, y, op) => op < 0.01 ? '' : `<text transform="rotate(-90 ${x} ${y})" x="${x}" y="${y}" font-size="15" class="dm-t muted" text-anchor="middle" font-weight="700" opacity="${op.toFixed(2)}">${str}</text>`;
     const arrow = (pts, op, o = {}) => {                                                  // a polyline with a head; the shaft stops under the head
@@ -147,7 +148,7 @@ AF3.kinds.diffmodule = (s) => ({
       let cond = '';
       for (let r = 0; r < 5; r++) for (let q = 0; q < 5; q++) cond += rect(ZG.x + q * ZG.cell, ZG.y + r * ZG.cell, ZG.cell, ZG.cell, zcol(r, q), LINE, 1);
       for (let r = 0; r < 5; r++) cond += rect(SG.x, SG.y + r * SG.h, SG.w, SG.h, shade(SVIO, (SV[r] - 0.5) * 0.35), LINE, 1);
-      h += `<g opacity="${at.toFixed(2)}">${cond}</g>` + txt(ZG.x + 35, 5, 14, 'z', at, { bold: true }) + txt(SG.x + SG.w / 2, 5, 14, 's', at, { bold: true }) + txt(ZG.x, 100, 13, 'from the trunk', at, { anchor: 'start', muted: true });
+      h += `<g opacity="${at.toFixed(2)}">${cond}</g>` + txt(ZG.x + 35, 5, 16, '$z$', at) + txt(SG.x + SG.w / 2, 5, 16, '$s$', at) + txt(ZG.x, 100, 13, 'from the trunk', at, { anchor: 'start', muted: true });
 
       // ---- step 1: the module as one box, positions in, positions out ----
       const bb = ramp(a, 0.15, 0.4) * (1 - ramp(b, 0, 0.35));
@@ -157,14 +158,14 @@ AF3.kinds.diffmodule = (s) => ({
       for (let k = 0; k < N; k++) ghost += rect(C0 + k * CW, XY, CW, QH, 'none', 'var(--muted)', 1, 1, 0, '3 2');
       h += `<g opacity="${(ramp(a, 0.2, 0.45) * (1 - ramp(g, 0.2, 0.5))).toFixed(2)}">${ghost}</g>`;
       for (let k = 0; k < N; k++) h += xcell(A0, k, XIN[k], ramp(a, 0, 0.3));
-      h += txt(A0 + (N * CW) / 2, 354, 13, 'x: noisy positions', at, { muted: true }) + txt(C0 + (N * CW) / 2, 354, 13, 'x: a little less noisy', ramp(a, 0.3, 0.5), { muted: true });
+      h += txt(A0 + (N * CW) / 2, 354, 13, '$x$: noisy positions', at, { muted: true }) + txt(C0 + (N * CW) / 2, 354, 13, '$x$: a little less noisy', ramp(a, 0.3, 0.5), { muted: true });
 
       // ---- step 2: the atoms take the conditioning of their token, and their position ----
       const cOp = 1 - ramp(c, 0, 0.25);                                                     // the conditioning arrows are done once the attention starts
       const bus = QY - 14, busOp = ramp(b, 0.1, 0.4) * cOp;
       h += arrow([[cx(A0, 0), 108], [cx(A0, 0), bus - 1]], ramp(b, 0, 0.3) * cOp, {});
       h += busOp < 0.01 ? '' : `<line x1="${cx(A0, 0)}" y1="${bus}" x2="${cx(A0, N - 1)}" y2="${bus}" stroke="var(--accent)" stroke-width="2.5" opacity="${busOp.toFixed(2)}"/>`;
-      h += txt(108, 196, 13, 'each atom takes the', ramp(b, 0.05, 0.3) * (1 - ramp(c, 0, 0.15)), { anchor: 'start', muted: true }) + txt(108, 212, 13, 's and z of its token', ramp(b, 0.05, 0.3) * (1 - ramp(c, 0, 0.15)), { anchor: 'start', muted: true });
+      h += txt(108, 196, 13, 'each atom takes the', ramp(b, 0.05, 0.3) * (1 - ramp(c, 0, 0.15)), { anchor: 'start', muted: true }) + txt(108, 212, 13, '$s$ and $z$ of its token', ramp(b, 0.05, 0.3) * (1 - ramp(c, 0, 0.15)), { anchor: 'start', muted: true });
       for (let k = 0; k < N; k++) {
         h += rect(A0 + k * CW, QY, CW, QH, QCOL[TOK[k] % 2], LINE, 1, ramp(b, 0.3 + 0.035 * k, 0.5 + 0.035 * k));
         h += arrow([[cx(A0, k), bus], [cx(A0, k), QY - 3]], ramp(b, 0.2 + 0.03 * k, 0.4 + 0.03 * k) * cOp, { w: 1.6, hl: 6, hw: 3.5 });
@@ -185,7 +186,7 @@ AF3.kinds.diffmodule = (s) => ({
 
       // ---- step 5: global attention, token by token; z and s come in ----
       h += arrow([[150, 50], [300, 50], [300, BY + BH / 2], [B0 - 4, BY + BH / 2]], ramp(e, 0, 0.25) * (1 - 0.6 * ramp(f, 0, 0.2)), {});
-      h += txt(152, 36, 13, 'z biases, s conditions', ramp(e, 0.05, 0.25) * (1 - ramp(f, 0, 0.15)), { anchor: 'start', muted: true });
+      h += txt(152, 36, 13, '$z$ biases, $s$ conditions', ramp(e, 0.05, 0.25) * (1 - ramp(f, 0, 0.15)), { anchor: 'start', muted: true });
       h += txt(B0 + T * BW + 10, BY + BH / 2, 13, '24 blocks', ramp(e, 0.2, 0.4), { anchor: 'start', muted: true });
       h += globalAttn(ramp(e, 0.15, 0.95), ramp(e, 0, 0.05) * (1 - ramp(f, 0, 0.15)));
 
@@ -228,7 +229,7 @@ AF3.kinds.diffmodule = (s) => ({
 
     frame.innerHTML = `<h2 class="deck-heading">${esc(AF3.plain(title.paras[0]))}</h2>
       <div class="dm-wrap"><svg viewBox="0 0 1000 395" role="img" aria-label="Inside the diffusion module: noisy atom positions and the trunk's s and z go in; the atoms take the conditioning of their token and attend to atoms close by; the atoms of each token are averaged into one vector; the tokens attend to every token with z as the bias; the token vectors are passed back to the atoms, which attend again and each get an update for their own position; the new positions go into the next step"></svg></div>
-      <div class="dm-caps">${CAPTIONS.map((t, i) => `<p class="dm-cap reveal-in" data-show="${i + 1}">${esc(t)}</p>`).join('')}</div>
+      <div class="dm-caps">${CAPTIONS.map((t, i) => `<p class="dm-cap reveal-in" data-show="${i + 1}">${AF3.rich(t, esc)}</p>`).join('')}</div>
       ${AF3.arch.mini(s.n, AF3.plain(title.paras[0]).length)}`;
     const svg = frame.querySelector('svg');
 

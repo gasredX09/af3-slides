@@ -39,7 +39,7 @@ const CHIPS = [
 ];
 const CAPTIONS = [
   'Two tests, both scored by LDDT (higher is better): the ten public CASP15 RNA targets, and recent PDB structures that hold only RNA or only DNA. The baseline is RoseTTAFold2NA.',
-  'RNA-only and DNA-only structures from the recent PDB. AF3 has the higher LDDT on both, with a paired Wilcoxon test of p = 1.6e-7 for RNA (29 structures) and p = 5.2e-12 for DNA (63).',
+  'RNA-only and DNA-only structures from the recent PDB. AF3 has the higher LDDT on both, with a paired Wilcoxon test of $p = 1.6 \\times 10^{-7}$ for RNA (29 structures) and $p = 5.2 \\times 10^{-12}$ for DNA (63).',
   'CASP15 RNA, target by target. On the targets they share, AF3 has a higher average than RoseTTAFold2NA and AIchemy_RNA, the best AI-based entry. It did not reach the best entry that had human help.',
   'An example from the paper: a mycobacteriophage immunity repressor bound to double-stranded DNA (PDB 7R6R). Left: coloured by pLDDT, high (blue) except a low-confidence tail (orange). Right: coloured by chain.',
   'The predicted aligned error of that prediction (dark green is low error): low across the protein and the DNA chains, and high only for the first residues, the disordered tail.',
@@ -97,7 +97,7 @@ AF3.kinds.nucleic = (s) => ({
 
     frame.innerHTML = `<h2 class="deck-heading">${esc(TITLE)}</h2>
       <div class="nu-wrap"><svg viewBox="0 0 1000 395" role="img" aria-label="The paper's Extended Data Fig. 5: AlphaFold 3 against RoseTTAFold2NA on RNA-only and DNA-only structures, the CASP15 RNA targets, and an example of a protein bound to DNA with its predicted aligned error"></svg></div>
-      <div class="nu-caps">${CAPTIONS.map((t, i) => `<p class="nu-cap reveal-in" data-show="${i + 1}">${esc(t)}</p>`).join('')}</div>`;
+      <div class="nu-caps">${CAPTIONS.map((t, i) => `<p class="nu-cap reveal-in" data-show="${i + 1}">${AF3.rich(t, esc)}</p>`).join('')}</div>`;
     const svg = frame.querySelector('svg');
 
     const SK = ['k1', 'k2', 'k3', 'k4', 'k5'];

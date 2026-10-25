@@ -34,7 +34,11 @@ const REFS = [
   {
     cite: '<b>Hettiarachchi (ramithuh).</b> Live slides template. '
       + '<a href="https://github.com/ramithuh/protein-design-interactive-slides">github.com/ramithuh/protein-design-interactive-slides</a>',
-    use: 'The browser runtime these slides run on (reveal.js and KaTeX inside).',
+    use: 'The browser runtime these slides run on (reveal.js and KaTeX inside). MIT licence, Copyright (c) 2026 Ramith Hettiarachchi.',
+  },
+  {
+    cite: '<b>Carnegie Mellon University.</b> Stacked wordmark, from <a href="https://www.cmu.edu">cmu.edu</a>.',
+    use: 'The logo on the title slide.',
   },
   {
     cite: '<b>RDKit:</b> open-source cheminformatics. <a href="https://www.rdkit.org">rdkit.org</a>',

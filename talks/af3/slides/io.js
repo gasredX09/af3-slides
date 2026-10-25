@@ -3,8 +3,9 @@
 //
 // The inputs are made-up examples of the kinds of input the paper lists (polymer sequences, residue modifications and ligand
 // SMILES; Abramson et al., Results): a protein, a DNA and an RNA sequence, and a ligand as SMILES. The output is a made-up
-// 2D point cloud (a protein, a DNA double strand, an RNA strand and a ligand ring), coloured by input type, that assembles
-// from noise into a complex. It is an illustration, not an AF3 prediction, and the slide says so.
+// 2D point cloud, coloured by input type, that assembles from noise into ONE complex, because that is what "jointly" means: a
+// protein chain arching over a DNA double strand (left) and an RNA strand (right), with the ligand ring in a dent on top of the
+// arch, every molecule in contact with the chain (dashed lines). It is an illustration, not an AF3 prediction, and the slide says so.
 //
 // Steps: 1 the bullets and the empty strip (Input, AF3, Output) · 2 the four inputs type in · 3 AF3 lights up and the output
 // assembles, every atom at once.
@@ -25,19 +26,66 @@ const INPUTS = [
   { type: 'ligand', label: 'ligand', text: 'CC(C)Cc1ccc(cc1)C(C)C(=O)O', color: '--plot-2' },
 ];
 
-// the made-up complex, in map units: points with a type, grouped in chains that are drawn as lines
+// a smooth curve through waypoints (Catmull-Rom), cut into n points of equal spacing, each moved sideways by a small wave (the
+// projection of a helix). Returns [x, y] pairs. (The same helper as in diffusion.js.)
+function trace(way, n, amp, period) {
+  const dense = [];
+  for (let i = 0; i < way.length - 1; i++) {
+    const p0 = way[Math.max(0, i - 1)], p1 = way[i], p2 = way[i + 1], p3 = way[Math.min(way.length - 1, i + 2)];
+    for (let k = 0; k < 24; k++) {
+      const u = k / 24, u2 = u * u, u3 = u2 * u;
+      dense.push([0, 1].map((d) => 0.5 * (2 * p1[d] + (-p0[d] + p2[d]) * u + (2 * p0[d] - 5 * p1[d] + 4 * p2[d] - p3[d]) * u2 + (-p0[d] + 3 * p1[d] - 3 * p2[d] + p3[d]) * u3)));
+    }
+  }
+  dense.push(way[way.length - 1]);
+  const len = [0];
+  for (let i = 1; i < dense.length; i++) len.push(len[i - 1] + Math.hypot(dense[i][0] - dense[i - 1][0], dense[i][1] - dense[i - 1][1]));
+  const out = [];
+  for (let k = 0; k < n; k++) {
+    const target = (len[len.length - 1] * k) / (n - 1);
+    let i = 1;
+    while (i < len.length - 1 && len[i] < target) i++;
+    const f = (target - len[i - 1]) / (len[i] - len[i - 1] || 1);
+    const x = dense[i - 1][0] + (dense[i][0] - dense[i - 1][0]) * f, y = dense[i - 1][1] + (dense[i][1] - dense[i - 1][1]) * f;
+    const tx = dense[i][0] - dense[i - 1][0], ty = dense[i][1] - dense[i - 1][1], tn = Math.hypot(tx, ty) || 1;
+    const off = amp * Math.sin((2 * Math.PI * k) / period);
+    out.push([x - (ty / tn) * off, y + (tx / tn) * off]);
+  }
+  return out;
+}
+
+// the made-up complex, in map units (400 x 190): points with a type, the chains that are drawn as lines, the DNA base pairs and the contacts
 function complex() {
-  const pts = [], chains = [];
-  const chain = (type) => { chains.push({ type, idx: [] }); return chains.length - 1; };
-  const add = (c, x, y) => { pts.push({ type: chains[c].type, x, y }); chains[c].idx.push(pts.length - 1); };
-  const prot = chain('protein'), dnaA = chain('dna'), dnaB = chain('dna'), rna = chain('rna'), lig = chain('ligand');
-  for (let i = 0; i < 36; i++) add(prot, 24 + i * 6.1, 46 + 19 * Math.sin(i * 0.95));
-  for (let j = 0; j < 22; j++) add(dnaA, 36 + j * 9.4, 138 + 17 * Math.sin(j * 0.72));
-  for (let j = 0; j < 22; j++) add(dnaB, 36 + j * 9.4, 138 + 17 * Math.sin(j * 0.72 + Math.PI));
-  for (let j = 0; j < 14; j++) add(rna, 262 + j * 8.4, 150 + 15 * Math.sin(j * 0.9));
-  for (let k = 0; k < 6; k++) add(lig, 322 + 17 * Math.cos(k * Math.PI / 3), 78 + 17 * Math.sin(k * Math.PI / 3));
-  add(lig, 351, 68); add(lig, 351, 90);
-  return { pts, chains, dnaA, dnaB };
+  const pts = [], rungs = [], contacts = [];
+  const P = (type, x, y) => { pts.push({ type, x, y }); return pts.length - 1; };
+  const dnaA = [], dnaB = [], rna = [];
+  for (let j = 0; j < 22; j++) dnaA.push(P('dna', 12 + j * 9.2, 156 + 11 * Math.sin(j * 0.72)));
+  for (let j = 0; j < 22; j++) dnaB.push(P('dna', 12 + j * 9.2, 156 + 11 * Math.sin(j * 0.72 + Math.PI)));
+  for (let j = 0; j < 14; j++) rna.push(P('rna', 232 + j * 9.8, 156 + 11 * Math.sin(j * 0.9)));
+  // the protein: one chain, lying along the DNA at its left end and along the RNA at its right end, arching over between them,
+  // with a dent on top of the arch
+  const WAY = [[12, 134], [60, 136], [85, 124], [100, 92], [112, 60], [135, 38], [165, 30], [182, 40], [200, 46], [218, 40], [235, 30], [265, 38], [288, 60], [300, 92], [315, 124],
+    [340, 136], [385, 136]];
+  const prot = trace(WAY, 72, 3.5, 3.7).map(([x, y]) => P('protein', x, y));
+  // the ligand: a six-ring in the dent, two substituents pointing up
+  const ring = [];
+  for (let k = 0; k < 6; k++) ring.push(P('ligand', 200 + 12 * Math.cos((k * Math.PI) / 3), 30 + 12 * Math.sin((k * Math.PI) / 3)));
+  const s1 = P('ligand', 189, 8), s2 = P('ligand', 211, 8);
+  const chains = [
+    { type: 'dna', idx: dnaA }, { type: 'dna', idx: dnaB }, { type: 'rna', idx: rna }, { type: 'protein', idx: prot },
+    { type: 'ligand', idx: [...ring, ring[0]] }, { type: 'ligand', idx: [ring[4], s1] }, { type: 'ligand', idx: [ring[5], s2] },
+  ];
+  for (let j = 1; j < 22; j += 3) rungs.push([dnaA[j], dnaB[j]]);   // base pairs, every third point (not where the strands cross)
+  // contacts, read off the clean complex: protein with DNA and RNA where they lie close (every second such point), ligand with its nearest chain point
+  const d = (a, b) => Math.hypot(pts[a].x - pts[b].x, pts[a].y - pts[b].y);
+  const nearest = (i, set) => set.reduce((best, j) => (best < 0 || d(i, j) < d(i, best) ? j : best), -1);
+  prot.forEach((i, n) => {
+    if (n % 2) return;
+    const j = nearest(i, [...dnaA, ...dnaB, ...rna]);
+    if (d(i, j) < 20) contacts.push([i, j]);
+  });
+  ring.forEach((i) => { const j = nearest(i, prot); if (d(i, j) < 17) contacts.push([i, j]); });
+  return { pts, chains, rungs, contacts };
 }
 
 AF3.kinds.iodiagram = (s) => ({
@@ -75,7 +123,7 @@ AF3.kinds.iodiagram = (s) => ({
     `);
     const title = AF3.texts(s).find((t) => t.ph === 'title');
     const body = AF3.texts(s).find((t) => t.ph === 'body');
-    const { pts, chains, dnaA, dnaB } = complex();
+    const { pts, chains, rungs: rungPairs, contacts } = complex();
     const rand = rng(SEED);
     const gauss = () => { const u = Math.max(rand(), 1e-9), v = rand(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
     const eps = pts.map(() => [gauss(), gauss()]);   // one fixed noise draw per point
@@ -83,7 +131,8 @@ AF3.kinds.iodiagram = (s) => ({
 
     const circles = pts.map((p, i) => `<circle class="io-pt" data-i="${i}" r="3.4" style="fill:var(${col[p.type]})" opacity="0"/>`).join('');
     const lines = chains.map((c, k) => `<polyline class="io-line" data-chain="${k}" style="stroke:var(${col[c.type]})" opacity="0"/>`).join('')
-      + Array.from({ length: 8 }, (_, r) => `<line class="io-line io-rung" data-rung="${r * 3}" style="stroke:var(--plot-5)" opacity="0"/>`).join('');
+      + rungPairs.map((_, r) => `<line class="io-line io-rung" data-rung="${r}" style="stroke:var(--plot-5)" opacity="0"/>`).join('')
+      + contacts.map((_, c) => `<line class="io-line io-contact" data-contact="${c}" style="stroke:var(--muted);stroke-width:1.1;stroke-dasharray:3 3" opacity="0"/>`).join('');
     frame.innerHTML = `<h2 class="deck-heading">${esc(AF3.plain(title.paras[0]))}</h2>
       <ul class="io-list">${body.paras.map((p) => `<li>${AF3.paraHtml(p, esc, {})}</li>`).join('')}</ul>
       <div class="io-strip">
@@ -100,7 +149,7 @@ AF3.kinds.iodiagram = (s) => ({
     const strip = frame.querySelector('.io-strip');
     const codes = [...frame.querySelectorAll('.io-row code')];
     const svg = frame.querySelector('svg');
-    const dots = [...svg.querySelectorAll('.io-pt')], polys = [...svg.querySelectorAll('polyline')], rungs = [...svg.querySelectorAll('.io-rung')];
+    const dots = [...svg.querySelectorAll('.io-pt')], polys = [...svg.querySelectorAll('polyline')], rungs = [...svg.querySelectorAll('.io-rung')], contactEls = [...svg.querySelectorAll('.io-contact')];
     const at = (i, sigma) => [pts[i].x + NOISE * sigma * eps[i][0], pts[i].y + NOISE * sigma * eps[i][1]];
 
     // typed: 0..1 over all four rows (staggered); flow: AF3 and arrows lit; vis: the cloud's opacity; sigma: its noise; bonds: its lines
@@ -118,11 +167,17 @@ AF3.kinds.iodiagram = (s) => ({
         pl.setAttribute('points', chains[k].idx.map((i) => at(i, sigma).map((v) => v.toFixed(1)).join(',')).join(' '));
         pl.setAttribute('opacity', (bonds * 0.85).toFixed(2));
       });
-      rungs.forEach((ln) => {   // base pairs: strand A point j to strand B point j
-        const j = +ln.dataset.rung, a = at(chains[dnaA].idx[j], sigma), b = at(chains[dnaB].idx[j], sigma);
+      rungs.forEach((ln, r) => {   // base pairs: strand A point j to strand B point j
+        const a = at(rungPairs[r][0], sigma), b = at(rungPairs[r][1], sigma);
         ln.setAttribute('x1', a[0].toFixed(1)); ln.setAttribute('y1', a[1].toFixed(1));
         ln.setAttribute('x2', b[0].toFixed(1)); ln.setAttribute('y2', b[1].toFixed(1));
         ln.setAttribute('opacity', (bonds * 0.7).toFixed(2));
+      });
+      contactEls.forEach((ln, c) => {   // contacts between the molecules: the joint arrangement, dashed
+        const a = at(contacts[c][0], sigma), b = at(contacts[c][1], sigma);
+        ln.setAttribute('x1', a[0].toFixed(1)); ln.setAttribute('y1', a[1].toFixed(1));
+        ln.setAttribute('x2', b[0].toFixed(1)); ln.setAttribute('y2', b[1].toFixed(1));
+        ln.setAttribute('opacity', (bonds * 0.8).toFixed(2));
       });
     };
     const stateOf = (step) => ({ typed: step >= 2 ? 1 : 0, flow: step >= 3 ? 1 : 0, vis: step >= 3 ? 1 : 0, sigma: step >= 3 ? 0 : 1, bonds: step >= 3 ? 1 : 0 });

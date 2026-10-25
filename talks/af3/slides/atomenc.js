@@ -48,12 +48,12 @@ const ARH = (A_ROWS * RH) / Q_ROWS;                                             
 const cx = (k) => X0 + k * CW + CW / 2;
 
 const CAPTIONS = [
-  'The atom level has three tensors: q, a vector for each atom; p, a vector for each pair of atoms; and r, the noisy positions rescaled to about unit variance.',
-  "r has only 3 numbers per atom, so a linear layer turns them into 128, the size of q's vectors.",
-  "Then r is added to q, number by number. Now each atom's vector carries its noisy position.",
-  'The atoms attend to atoms close by in the sequence, in 3 blocks. p supplies a bias for each pair of atoms, the way z did for tokens.',
-  "Then each atom's vector is projected to 768 numbers, and the vectors of the atoms of a token are averaged. The result is a, one vector for each token.",
-  'a goes on to the token-level transformer, on the next slide. q and p are kept for the decoder at the end: the skip link.',
+  'The atom level has three tensors: $q$, a vector for each atom; $p$, a vector for each pair of atoms; and $r$, the noisy positions rescaled to about unit variance.',
+  "$r$ has only 3 numbers per atom, so a linear layer turns them into 128, the size of $q$'s vectors.",
+  "Then $r$ is added to $q$, number by number. Now each atom's vector carries its noisy position.",
+  'The atoms attend to atoms close by in the sequence, in 3 blocks. $p$ supplies a bias for each pair of atoms, the way $z$ did for tokens.',
+  "Then each atom's vector is projected to 768 numbers, and the vectors of the atoms of a token are averaged. The result is $a$, one vector for each token.",
+  '$a$ goes on to the token-level transformer, on the next slide. $q$ and $p$ are kept for the decoder at the end: the skip link.',
 ];
 
 AF3.kinds.atomenc = (s) => ({
@@ -85,8 +85,9 @@ AF3.kinds.atomenc = (s) => ({
 
     // ---- helpers ----
     const col = (base, v) => shade(base, (v - 0.5) * 0.5);
-    const tag = (l) => `<tspan font-weight="700" style="fill:${INK[l]}">${l}</tspan>`;
-    const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : `<text x="${x}" y="${y}" font-size="${size}" class="ae-t${o.muted ? ' muted' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''} opacity="${op.toFixed(2)}">${str}</text>`;
+    const tag = (l) => `$\\textcolor{${INK[l]}}{${l}}$`;                                                              // the letter of a tensor, in the colour of its cells
+    const mtxt = (x, y, size, str, op, o = {}) => AF3.svgRich(x, y, size, str, { ...o, op });   // a label with math: KaTeX between dollar signs
+    const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : String(str).includes('$') ? mtxt(x, y, size, str, op, o) : `<text x="${x}" y="${y}" font-size="${size}" class="ae-t${o.muted ? ' muted' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''} opacity="${op.toFixed(2)}">${str}</text>`;
     const rect = (x, y, w, h, fill, stroke, sw, op = 1, rx = 0) => op < 0.01 ? '' : `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}"${rx ? ` rx="${rx}"` : ''} fill="${fill}" stroke="${stroke}" stroke-width="${sw}" opacity="${op.toFixed(2)}"/>`;
     const cell = (x, y, w, h, fill, op = 1) => op < 0.01 ? '' : `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" fill="${fill}" stroke="${LINE}" stroke-width="0.8" opacity="${op.toFixed(2)}"/>`;
     const seps = (x0, y0, hh, op) => {                                                                               // the token boundaries
@@ -136,7 +137,7 @@ AF3.kinds.atomenc = (s) => ({
       }
       h += `<g opacity="${at.toFixed(2)}">${qg}${seps(X0, Q_Y, Q_ROWS * RH, 1)}</g>`;
       h += lab(Q_Y + 36, `${tag('q')}: a vector for each`, 'atom, 128 numbers', at);
-      h += txt(X0 + N * CW + 14, Q_Y + (Q_ROWS * RH) / 2, 13, '+ r, number by number', ramp(c, 0.05, 0.3) * (1 - ramp(c, 0.75, 0.95)), { anchor: 'start', muted: true });
+      h += txt(X0 + N * CW + 14, Q_Y + (Q_ROWS * RH) / 2, 13, '+ $r$, number by number', ramp(c, 0.05, 0.3) * (1 - ramp(c, 0.75, 0.95)), { anchor: 'start', muted: true });
 
       // ---- p: one vector per pair of atoms (drawn as one number each) ----
       let pg = '';
@@ -155,7 +156,7 @@ AF3.kinds.atomenc = (s) => ({
         h += rect(X0 + k0 * CW - 1, P_Y + k0 * PH - 1, CW + 2, PH + 2, 'none', CI, 2.5, dOp);
       }
       h += txt(X0, 118, 13, 'local attention, 3 blocks', ramp(d, 0, 0.1) * (1 - ramp(e, 0, 0.15)), { anchor: 'start', muted: true });
-      h += txt(X0 + N * CW + 14, P_Y + 4.5 * PH, 13, 'a bias for each pair, from p', ramp(d, 0.05, 0.2) * (1 - ramp(e, 0, 0.15)), { anchor: 'start', muted: true });
+      h += txt(X0 + N * CW + 14, P_Y + 4.5 * PH, 13, 'a bias for each pair, from $p$', ramp(d, 0.05, 0.2) * (1 - ramp(e, 0, 0.15)), { anchor: 'start', muted: true });
 
       // ---- step 5: the atoms of each token are projected up and averaged ----
       for (let i = 0; i < T; i++) {
@@ -177,7 +178,7 @@ AF3.kinds.atomenc = (s) => ({
       h += fl + ag;
       const ghost = at * (1 - ramp(e, 0.2, 0.55));                                                        // where a will be: shown from the start, so the picture has a goal
       h += ghost < 0.01 ? '' : `<rect x="${AX - 2}" y="${A_Y - 2}" width="${T * AP - 4 + 4}" height="${A_ROWS * RH + 4}" rx="4" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 3" opacity="${(0.8 * ghost).toFixed(2)}"/>`;
-      h += txt(AX + (T * AP - 4) / 2, A_Y + A_ROWS * RH + 18, 13, 'where this ends: a', ghost, { muted: true });
+      h += txt(AX + (T * AP - 4) / 2, A_Y + A_ROWS * RH + 18, 13, 'where this ends: $a$', ghost, { muted: true });
       const aLab = ramp(e, 0.5, 0.8);
       h += txt(AX + (T * AP - 4) / 2, A_Y - 28, 13.5, `${tag('a')}: a vector for each token`, aLab) + txt(AX + (T * AP - 4) / 2, A_Y - 12, 13, '768 numbers each', aLab, { muted: true });
 
@@ -187,13 +188,13 @@ AF3.kinds.atomenc = (s) => ({
       const sk = ramp(f, 0.35, 0.8), sy = P_Y + 6 * PH + 4;
       h += arrow([[X0 + N * CW + 4, sy], [965, sy]], sk, { dash: '6 4', col: 'var(--muted)', w: 2 });
       h += arrow([[X0 + N * CW + 4, Q_Y + Q_ROWS * RH - 8], [X0 + N * CW + 24, Q_Y + Q_ROWS * RH - 8], [X0 + N * CW + 24, sy]], sk, { dash: '6 4', col: 'var(--muted)', w: 2, noHead: true });
-      h += txt(730, sy - 16, 13, 'q and p are kept for the atom decoder (skip link)', ramp(f, 0.55, 0.85), { muted: true });
+      h += txt(730, sy - 16, 13, '$q$ and $p$ are kept for the atom decoder (skip link)', ramp(f, 0.55, 0.85), { muted: true });
       svg.innerHTML = h;
     };
 
-    frame.innerHTML = `<h2 class="deck-heading">${esc(AF3.plain(title.paras[0]))}</h2>
+    frame.innerHTML = `<h2 class="deck-heading">${esc(AF3.plain(title.paras[0]).replace(/->/g, '→'))}</h2>
       <div class="ae-wrap"><svg viewBox="0 0 1000 395" role="img" aria-label="Atoms to tokens in the diffusion module: the noisy positions r, three numbers per atom, are lifted to 128 numbers by a linear layer and added to q; the atoms attend to atoms close by in the sequence with a bias for each pair from p; each atom's vector is projected to 768 numbers and the vectors of the atoms of a token are averaged into a, one vector per token; a goes to the token-level transformer, and q and p are kept for the decoder"></svg></div>
-      <div class="ae-caps">${CAPTIONS.map((t, i) => `<p class="ae-cap reveal-in" data-show="${i + 1}">${esc(t)}</p>`).join('')}</div>
+      <div class="ae-caps">${CAPTIONS.map((t, i) => `<p class="ae-cap reveal-in" data-show="${i + 1}">${AF3.rich(t, esc)}</p>`).join('')}</div>
       ${AF3.arch.mini(s.n, AF3.plain(title.paras[0]).length)}`;
     const svg = frame.querySelector('svg');
 

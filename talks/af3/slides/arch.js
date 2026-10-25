@@ -189,6 +189,31 @@ function mini(n, titleChars, topOverride) {
   return `<div class="ar-mini" style="top:${top}%">${miniSvg(lit)}<p class="ml">${names}</p></div>`;
 }
 
+// The deck's own stage paragraphs (slides 30 and 43) write the tensors as plain letters, some as a letter run followed by a subscript run
+// (s + trunk, N + tok + " x 768"). They are set in KaTeX like every other symbol: a letter on its own is the tensor in these paragraphs, so
+// it becomes math, and a letter with a subscript run becomes one expression. (Used for slide 13's captions only.)
+const SYMBOL = /(?<![\w'\u2019])([zsmxqp])(?![\w'\u2019])/g;
+const mathRuns = (p) => {
+  const runs = p.runs.map((r) => ({ ...r })), out = [];
+  for (let i = 0; i < runs.length; i++) {
+    const r = runs[i];
+    if (r.sub) continue;   // taken with the run before it
+    let t = r.t, tail = '';
+    if (runs[i + 1] && runs[i + 1].sub) {
+      const sym = t.slice(-1);
+      t = t.slice(0, -1);
+      tail = `$${sym}_{\\mathrm{${runs[i + 1].t}}}`;
+      const m = runs[i + 2] && /^ \u00d7 (\d+)/.exec(runs[i + 2].t);   // N_tok x 768 is one expression
+      if (m) { tail += ` \\times ${m[1]}`; runs[i + 2].t = runs[i + 2].t.slice(m[0].length); }
+      tail += '$';
+    }
+    if (/^[zsmxqpa]$/.test(t)) out.push({ ...r, t: `$${t}$`, b: false });
+    else out.push({ ...r, t: t.replace(SYMBOL, '$$$1$$') });
+    if (tail) out.push({ t: tail });
+  }
+  return { ...p, runs: out };
+};
+
 // text helpers over the deck's own slides
 const stripNumber = (p) => ({ ...p, runs: p.runs.map((r, i) => (i === 0 ? { ...r, t: r.t.replace(/^\d+\.\s*/, '') } : r)) });
 const middleCard = (n) => AF3.texts(AF3.slide(n)).find((t) => t.g.x > 0.37 && t.g.x < 0.4 && t.paras.length > 2).paras;
@@ -236,7 +261,7 @@ AF3.kinds.arch = (s) => {
       frame.innerHTML = `<h2 class="deck-heading">${esc(AF3.plain(AF3.texts(s).find((t) => t.ph === 'title').paras[0]))}</h2>
         <div class="ar ar-wrap">${mapSvg()}</div><div class="ar-cap"></div>`;
       const root = frame.querySelector('.ar'), cap = frame.querySelector('.ar-cap');
-      const para = (p) => AF3.paraHtml(p, esc, {});
+      const para = (p) => AF3.paraHtml(mathRuns(p), (t) => AF3.rich(t, esc), {});
       const render = (st) => {
         let html;
         if (st.agenda !== undefined) {   // input preparation: which of its five steps this is, and the step

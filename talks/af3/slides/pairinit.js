@@ -36,9 +36,9 @@ const LINE = 'rgba(0,0,0,.28)';
 const rpeW = (i, j) => { const d = i - j, a = Math.abs(d); return Math.min(0.9, ([0.62, 0.42, 0.26, 0.14][a] ?? 0.06) * (d > 0 ? 1.12 : 0.92)); };
 
 const STEPS = [
-  { head: 'linear projection of s, twice, then add', dims: 'z<sub>ij</sub> = s<sub>i</sub> + s<sub>j</sub>', text: 'Each token’s input embedding is projected to c_z = 128 numbers by two different linear layers, one for the token as i and one as j. For every pair (i, j) the two are added.' },
-  { head: 'add relative positional encoding (r.p.e)', dims: '[c_rpe → c_z]', text: 'Where token j sits relative to token i: distance along the chain, position within a residue, same entity or not, which chain. Projected to c_z and added.' },
-  { head: 'add bond information', dims: '[1 → c_z]', text: 'Bonds the user provides between tokens, a yes or no for each pair, are projected to c_z and added. The result is the initial pair representation z.' },
+  { head: 'linear projection of $s$, twice, then add', dims: '$z_{ij} = s_i + s_j$', text: 'Each token’s input embedding is projected to $c_z = 128$ numbers by two different linear layers, one for the token as $i$ and one as $j$. For every pair $(i, j)$ the two are added.' },
+  { head: 'add relative positional encoding (r.p.e)', dims: '$[c_{\\mathrm{rpe}} \\to c_z]$', text: 'Where token $j$ sits relative to token $i$: distance along the chain, position within a residue, same entity or not, which chain. Projected to $c_z$ and added.' },
+  { head: 'add bond information', dims: '$[1 \\to c_z]$', text: 'Bonds the user provides between tokens, a yes or no for each pair, are projected to $c_z$ and added. The result is the initial pair representation $z$.' },
 ];
 
 AF3.kinds.pairinit = (s) => ({
@@ -54,7 +54,6 @@ AF3.kinds.pairinit = (s) => ({
       .pi-step { position: absolute; left: 0; right: 0; top: 0; }
       .pi-step h3 { margin: 0 0 .3em; font-size: var(--t-body); font-weight: 700; color: var(--accent); line-height: 1.2; }
       .pi-step .dims { margin: 0 0 .5em; font-size: var(--t-body); font-weight: 700; line-height: 1.2; color: var(--fg); }
-      .pi-step .dims sub { font-size: .7em; }
       .pi-step p { margin: 0; font-size: var(--t-small); line-height: 1.35; color: var(--muted); }
     `);
     const title = AF3.texts(s).find((t) => t.ph === 'title');
@@ -63,10 +62,9 @@ AF3.kinds.pairinit = (s) => ({
 
     frame.innerHTML = `<h2 class="deck-heading">${esc(AF3.plain(title.paras[0]))}</h2>
       <div class="pi-wrap"><svg viewBox="70 0 520 372" role="img" aria-label="The pair representation built up in place: the sum of two projections of each token, then the relative positional encoding, then the bonds"></svg></div>
-      <div class="pi-side">${STEPS.map((st, i) => `<div class="pi-step reveal-in" data-show="${i + 1}"><h3>${esc(st.head)}</h3><p class="dims">${st.dims}</p><p>${esc(st.text)}</p></div>`).join('')}</div>
+      <div class="pi-side">${STEPS.map((st, i) => `<div class="pi-step reveal-in" data-show="${i + 1}"><h3>${AF3.rich(st.head, esc)}</h3><p class="dims">${AF3.rich(st.dims, esc)}</p><p>${AF3.rich(st.text, esc)}</p></div>`).join('')}</div>
       ${AF3.arch.mini(s.n, AF3.plain(title.paras[0]).length)}`;
     const svg = frame.querySelector('svg');
-    const sub = (x, y, z = '') => `${x}<tspan dy="5" font-size="75%">${y}</tspan>${z ? `<tspan dy="-5">${z}</tspan>` : ''}`;
     const cx = (i) => X0 + i * CELL, cy = (j) => Y0 + j * CELL;
 
     const draw = (st) => {
@@ -80,8 +78,7 @@ AF3.kinds.pairinit = (s) => ({
         h += `<rect x="${cx(i)}" y="30" width="${CELL}" height="30" fill="${shade(PINK, (a[i] - 0.5) * 0.5)}" stroke="${LINE}" stroke-width="1"/>`;
         h += `<rect x="164" y="${cy(i)}" width="32" height="${CELL}" fill="${shade(PINK, (b[i] - 0.5) * 0.5)}" stroke="${LINE}" stroke-width="1"/>`;
       }
-      h += `<text x="${X0 - 10}" y="46" font-size="18" text-anchor="end" class="pi-t" style="fill:var(--fg)">${sub('s', 'i')}</text>`
-        + `<text x="180" y="90" font-size="18" text-anchor="middle" class="pi-t">${sub('s', 'j')}</text></g>`;
+      h += AF3.svgMath(X0 - 10, 46, 20, 's_i', { anchor: 'end', w: 80 }) + AF3.svgMath(180, 90, 20, 's_j', { w: 60 }) + '</g>';
       // the pair representation: the cube's depth (c_z), then the cells
       const faces = ramp(p1, 0.1, 0.35);
       h += `<g opacity="${faces.toFixed(2)}"><polygon points="${X0},${Y0} ${X0 + DX},${Y0 + DY} ${X0 + W + DX},${Y0 + DY} ${X0 + W},${Y0}" fill="${shade(BLUE, 0.3)}" stroke="${LINE}"/>`
@@ -120,11 +117,11 @@ AF3.kinds.pairinit = (s) => ({
       }
       // the name and the sizes
       const lab = ramp(p1, 0.85, 1);
-      h += `<text x="${X0 + W / 2}" y="12" font-size="32" font-weight="700" text-anchor="middle" class="pi-t" opacity="${lab.toFixed(2)}">z</text>`
-        + `<text x="${X0 + W / 2}" y="${Y0 + W + 26}" font-size="19" text-anchor="middle" class="pi-t" opacity="${faces.toFixed(2)}">${sub('N', 'tokens')}</text>`
-        + `<text x="0" y="0" font-size="19" text-anchor="middle" class="pi-t" transform="translate(140 ${Y0 + W / 2}) rotate(-90)" opacity="${faces.toFixed(2)}">${sub('N', 'tokens')}</text>`
+      h += AF3.svgMath(X0 + W / 2, 12, 35, 'z', { op: lab, w: 80 })
+        + AF3.svgMath(X0 + W / 2, Y0 + W + 26, 20, 'N_{\\mathrm{tokens}}', { op: faces, w: 160 })
+        + `<g transform="translate(140 ${Y0 + W / 2}) rotate(-90)">${AF3.svgMath(0, 0, 20, 'N_{\\mathrm{tokens}}', { op: faces, w: 160 })}</g>`
         + `<path d="M${X0 + W + 8} ${Y0 + W + 8} L${X0 + W + 8 + DX} ${Y0 + W + 8 + DY}" stroke="var(--muted)" stroke-width="1.5" opacity="${faces.toFixed(2)}"/>`
-        + `<text x="${X0 + W + DX + 16}" y="${Y0 + W + DY + 6}" font-size="18" class="pi-t muted" opacity="${faces.toFixed(2)}">${sub('c', 'z', ' = 128')}</text>`;
+        + AF3.svgMath(X0 + W + DX + 16, Y0 + W + DY + 6, 19, 'c_z = 128', { anchor: 'start', muted: true, op: faces, w: 140 });
       svg.innerHTML = h;
     };
 

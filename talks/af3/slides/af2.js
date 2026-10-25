@@ -4,8 +4,10 @@
 //
 // What each part shows (checked against Jumper et al. 2021, Evoformer and End-to-end structure prediction; Fig. 3d, e):
 //   MSA     columns are the residues of the input sequence, rows are the sequences in which those residues appear (related proteins
-//           from other species). The first row is the query. One column that never changes, and two columns that change together:
-//           the paper names "pairwise evolutionary correlations" as a source of constraints on structure.
+//           from other species). The first row is the query. The two signals of evolutionary information are marked: one column that
+//           never changes (conserved, green), and two columns that change together (coevolution, blue), to compatible amino acids (K with E,
+//           R with D: the rows are tinted by pair, as on slide 3). The paper names "pairwise evolutionary correlations" as a source of
+//           constraints on structure.
 //   Pair    one cell for every pair of residues; the cell for residues i and j holds what the network knows about how they relate.
 //   Module  one rigid frame per residue (the N-C-alpha-C backbone atoms), all starting at the identity and the origin; invariant
 //           point attention reads the single representation (a copy of the MSA's first row), the pair representation and the frames;
@@ -43,6 +45,7 @@ const FRAME = { fill: '#c9c4ea', stroke: '#7a72bf' };
 const ROWS = [['query', 'MWLKTGAEV'], ['fish', 'MWIRSGVDL'], ['rabbit', 'MWIKTNVEL'], ['chicken', 'LWLRTGADI'], ['…', 'MWIKSGVEL']];
 const SHADE = { M: .35, W: .95, L: .55, I: .45, K: .75, R: .25, T: .6, S: .3, G: .5, N: .15, A: .7, V: .4, E: .8, D: .2 };
 const COVARY = [3, 7], CONSERVED = 1;   // column indices (residues 4 and 8, and 2)
+const PAIRC = { K: '#86b8ee', E: '#86b8ee', R: '#ee93b9', D: '#ee93b9' };   // the two compatible pairs, a hue each (as on slide 3): K with E, R with D
 const SEL = { i: 3, j: 7 };             // the pair cell that is picked out (residues 4 and 8)
 
 // the nine frames: where they end up (made-up positions along a gentle wave, and tilts), and where they all start
@@ -83,18 +86,24 @@ AF3.kinds.af2reason = (s) => ({
     const rect = (x, y, w, h, fill, stroke, comp, a, b, o = {}) => reg('rect',
       `x="${x}" y="${y}" width="${w}" height="${h}" rx="${o.rx === undefined ? 3 : o.rx}" fill="${fill}" stroke="${stroke || 'none'}" stroke-width="${o.sw || 1.5}"${o.dash ? ` stroke-dasharray="${o.dash}"` : ''}`, comp, a, b, { max: o.max });
     const path = (d, comp, a, b, o = {}) => reg('path', `d="${d}" class="af-line"${o.stroke ? ` style="stroke:${o.stroke}"` : ''}${o.arrow ? ' marker-end="url(#af-head)"' : ''}${o.sw ? ` stroke-width="${o.sw}"` : ''}`, comp, a, b);
-    const em = (str) => `<tspan font-style="italic">${str}</tspan>`;
+    // a label with math in it ($...$), set in KaTeX at the same place and fade as a txt (o: size, anchor, muted, accent, color, rot)
+    const mtx = (x, y, str, comp, a, b, o = {}) => {
+      const size = o.size || 15, fo = { anchor: o.anchor || 'start', muted: o.muted, accent: o.accent, color: o.color, w: o.w || 260 };
+      return reg('foreignObject', AF3.foAttrs(x, y, size, fo) + (o.rot ? ` transform="rotate(${o.rot} ${x} ${y})"` : ''), comp, a, b, { inner: AF3.foInner(AF3.rich(str, esc), size, fo) });
+    };
 
     // ---------------- panel 1: the MSA ----------------
     const GX = 86, GY = 84, CW = 16, CH = 28;
     const msa = (() => {
-      let g = txt(16, 24, 'MSA representation', 'msa', 0, 0.06, { weight: 700 }) + txt(16, 44, '(s, r, c)', 'msa', 0, 0.06, { fill: 'var(--muted)' });
+      let g = txt(16, 24, 'MSA representation', 'msa', 0, 0.06, { weight: 700 }) + mtx(16, 44, '$(s, r, c)$', 'msa', 0, 0.06, { muted: true });
       g += txt(14, 68, 'sequences', 'msa', 0.02, 0.1, { size: 14, fill: 'var(--muted)' }) + txt(GX + 4.5 * CW, 68, 'residues', 'msa', 0.02, 0.1, { size: 14, anchor: 'middle', fill: 'var(--muted)' });
       ROWS.forEach(([name, seq], i) => {
         const a = 0.05 + 0.085 * i, b = a + 0.1, cy = GY + CH * i + CH / 2;
         g += txt(14, cy, name, 'msa', a, b, { weight: i === 0 ? 700 : 400 });
         [...seq].forEach((ch, j) => {
           g += rect(GX + CW * j + 0.5, GY + CH * i + 0.5, CW - 1, CH - 1, mix(MSA[0], MSA[1], SHADE[ch]), null, 'msa', a, b);
+          // in the two coevolving columns the cell takes the hue of its pair (K with E, R with D) as the pairing is shown
+          if (COVARY.includes(j)) g += rect(GX + CW * j + 0.5, GY + CH * i + 0.5, CW - 1, CH - 1, PAIRC[ch], null, 'msa', 0.74, 0.84);
           g += txt(GX + CW * j + CW / 2, cy + 1, ch, 'msa', a, b, { size: 14, anchor: 'middle', fill: INK });
         });
       });
@@ -109,6 +118,7 @@ AF3.kinds.af2reason = (s) => ({
       g += path(`M${cx(COVARY[0])} ${bot + 2} V${bot + 14} H${cx(COVARY[1])} V${bot + 2}`, 'msa', 0.78, 0.88, { stroke: 'var(--accent)' });
       g += path(`M${mid} ${bot + 14} V${bot + 38}`, 'msa', 0.8, 0.9, { stroke: 'var(--accent)' });
       g += txt(mid, bot + 52, 'change together', 'msa', 0.82, 0.95, { anchor: 'middle', weight: 700, fill: 'var(--accent)' });
+      g += txt(mid, bot + 72, 'K with E, R with D', 'msa', 0.86, 0.98, { size: 13, anchor: 'middle', fill: 'var(--muted)' });
       return g;
     })();
 
@@ -116,9 +126,9 @@ AF3.kinds.af2reason = (s) => ({
     const PX = 44, PY = 84, PC = 16;
     const pair = (() => {
       const r = rng(SEED);
-      let g = txt(16, 24, 'Pair representation', 'pair', 0, 0.06, { weight: 700 }) + txt(16, 44, '(r, r, c)', 'pair', 0, 0.06, { fill: 'var(--muted)' });
-      g += txt(PX + 4.5 * PC, 62, 'residue i', 'pair', 0.02, 0.12, { size: 14, anchor: 'middle', fill: 'var(--muted)', html: `residue ${em('i')}` });
-      g += txt(14, PY + 4.5 * PC, 'residue j', 'pair', 0.02, 0.12, { size: 14, anchor: 'middle', fill: 'var(--muted)', rot: -90, html: `residue ${em('j')}` });
+      let g = txt(16, 24, 'Pair representation', 'pair', 0, 0.06, { weight: 700 }) + mtx(16, 44, '$(r, r, c)$', 'pair', 0, 0.06, { muted: true });
+      g += mtx(PX + 4.5 * PC, 62, 'residue $i$', 'pair', 0.02, 0.12, { size: 14, anchor: 'middle', muted: true });
+      g += mtx(14, PY + 4.5 * PC, 'residue $j$', 'pair', 0.02, 0.12, { size: 14, anchor: 'middle', muted: true, rot: -90 });
       // a dot per residue along the top (i) and the left (j); residues 4 and 8 are picked out in the accent
       const dot = (cx, cy, sel) => reg('circle', `cx="${cx}" cy="${cy}" r="${sel ? 5 : 3}" fill="${sel ? 'var(--accent)' : 'var(--muted)'}"`, 'pair', sel ? 0.7 : 0.04, sel ? 0.82 : 0.14);
       for (let k = 0; k < N; k++) g += dot(PX + PC * k + PC / 2, 75, false) + dot(29, PY + PC * k + PC / 2, false);
@@ -135,7 +145,7 @@ AF3.kinds.af2reason = (s) => ({
       g += rect(PX + PC * SEL.i, PY, PC, PC * N, 'var(--accent)', null, 'pair', 0.7, 0.82, { max: 0.14, rx: 0 });
       g += rect(PX, PY + PC * SEL.j, PC * N, PC, 'var(--accent)', null, 'pair', 0.7, 0.82, { max: 0.14, rx: 0 });
       g += rect(PX + PC * SEL.i - 1, PY + PC * SEL.j - 1, PC + 2, PC + 2, 'none', 'var(--accent)', 'pair', 0.8, 0.92, { sw: 3 });
-      g += txt(PX + 4.5 * PC, PY + PC * N + 26, '', 'pair', 0.86, 1, { anchor: 'middle', size: 16, weight: 700, fill: 'var(--accent)', html: `${em('i')} = 4, ${em('j')} = 8` });
+      g += mtx(PX + 4.5 * PC, PY + PC * N + 26, '$i = 4,\\ j = 8$', 'pair', 0.86, 1, { anchor: 'middle', size: 16, accent: true });
       return g;
     })();
 
@@ -162,7 +172,7 @@ AF3.kinds.af2reason = (s) => ({
       g += path('M238 103 L254 103', 'mod', 0.2, 0.3, { arrow: true }) + path('M338 140 V210', 'mod', 0.26, 0.34, { arrow: true });
       // the frames: one triangle (the N, C-alpha and C of a residue) per residue, all starting at the origin
       g += rect(12, 200, 476, 122, 'none', 'var(--muted)', 'mod', 0.24, 0.34, { rx: 12, dash: '5 4' });
-      g += txt(24, 218, 'frames: the N–Cα–C of each residue', 'mod', 0.26, 0.36, { size: 13, fill: 'var(--muted)' });
+      g += mtx(24, 218, 'frames: the $\\mathrm{N}\\text{–}\\mathrm{C}_\\alpha\\text{–}\\mathrm{C}$ of each residue', 'mod', 0.26, 0.36, { size: 13, muted: true, w: 420 });
       g += `<g data-origin opacity="0" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="M${ORIGIN[0] - 6} ${ORIGIN[1]} H${ORIGIN[0] + 6} M${ORIGIN[0]} ${ORIGIN[1] - 6} V${ORIGIN[1] + 6}"/></g>`;
       g += `<text data-start x="30" y="306" class="af-t" font-size="13" style="fill:var(--muted)" opacity="0">all frames start at the origin</text>`;
       g += FINAL.map((_, k) => `<g data-tri="${k}" opacity="0"><g data-chi="${k}" opacity="0"><line x1="0" y1="-10" x2="0" y2="-22" stroke="${CHI.stroke}" stroke-width="2"/>`
@@ -171,7 +181,7 @@ AF3.kinds.af2reason = (s) => ({
       // after the 8 blocks: the chi angles
       g += path('M386 103 L416 103', 'chi', 0, 0.2, { arrow: true });
       g += rect(418, 68, 72, 70, CHI.fill, CHI.stroke, 'chi', 0, 0.2, { rx: 10, sw: 2 });
-      g += txt(454, 92, 'Predict', 'chi', 0, 0.2, { anchor: 'middle', weight: 700, fill: INK }) + txt(454, 112, 'χ angles', 'chi', 0, 0.2, { anchor: 'middle', fill: INK });
+      g += txt(454, 92, 'Predict', 'chi', 0, 0.2, { anchor: 'middle', weight: 700, fill: INK }) + mtx(454, 112, '$\\chi$ angles', 'chi', 0, 0.2, { anchor: 'middle', color: INK });
       g += path('M454 140 V210', 'chi', 0.1, 0.25, { arrow: true });
       return g;
     })();
@@ -183,7 +193,7 @@ AF3.kinds.af2reason = (s) => ({
       <g transform="translate(0 0)">${msa}</g><g transform="translate(265 0)">${pair}</g><g transform="translate(500 0)">${struct}</g></svg>`;
     frame.innerHTML = `<h2 class="deck-heading">${esc(AF3.plain(title.paras[0]))}</h2>
       <div class="af-wrap">${svg}
-        <div class="af-caps">${['msa', 'pair', 'mod'].map((c, i) => `<p data-cap="${c}">${AF3.paraHtml(captions[i].paras[0], esc, {})}</p>`).join('')}</div>
+        <div class="af-caps">${['msa', 'pair', 'mod'].map((c, i) => `<p data-cap="${c}">${AF3.rich(captions[i].paras[0].runs.map((r) => (r.i && /^[ij]$/.test(r.t) ? `$${r.t}$` : r.t)).join(''), esc)}</p>`).join('')}</div>
       </div>
       ${AF3.tagHtml('illustration: made-up sequences and positions', esc)}`;
 

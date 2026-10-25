@@ -45,12 +45,12 @@ const BSC = [-0.2, 0.9, 0.1, 1.6, -0.5];                                        
 const EXPS = BSC.map(Math.exp), WSUM = EXPS.reduce((a, b) => a + b, 0), W = EXPS.map((v) => v / WSUM);
 
 const CAPTIONS = [
-  'm keeps one vector for every position in every sequence. Position i in every sequence will be replaced by a weighted average of the positions in its own sequence, and z decides the weights.',
-  'Row i of z gives one number for every position j (for each head): how much position i should listen to position j. A softmax turns them into weights that add up to 1. Nothing from m is used here.',
-  'm is projected into values v, a vector for every position in every sequence, and into gates g: numbers between 0 and 1 that can switch parts of a vector off.',
+  '$m$ keeps one vector for every position in every sequence. Position $i$ in every sequence will be replaced by a weighted average of the positions in its own sequence, and $z$ decides the weights.',
+  'Row $i$ of $z$ gives one number for every position $j$ (for each head): how much position $i$ should listen to position $j$. A softmax turns them into weights that add up to 1. Nothing from $m$ is used here.',
+  '$m$ is projected into values $v$, a vector for every position in every sequence, and into gates $g$: numbers between 0 and 1 that can switch parts of a vector off.',
   'In each sequence, add up the values along its row with these weights. The weights are the same for every sequence. Then multiply by the gate.',
-  'This runs in 8 heads, each with its own weights from z. The heads are joined and a linear layer gives the update for position i in every sequence.',
-  'The same is done for every position i, each time with row i of z giving the weights. The result is added to m.',
+  'This runs in 8 heads, each with its own weights from $z$. The heads are joined and a linear layer gives the update for position $i$ in every sequence.',
+  'The same is done for every position $i$, each time with row $i$ of $z$ giving the weights. The result is added to $m$.',
 ];
 
 AF3.kinds.pwa = (s) => ({
@@ -64,7 +64,6 @@ AF3.kinds.pwa = (s) => ({
       .pw-t.muted { fill: var(--muted); }
       .pw-caps { position: absolute; left: 4.2%; right: 4.2%; top: 82.5%; height: 10.5%; }
       .pw-cap { position: absolute; left: 0; right: 0; top: 0; margin: 0; font-size: var(--t-small); line-height: 1.3; font-weight: 600; }
-      .pw-cap sub { font-size: .7em; }
     `);
     const heading = AF3.apTitle(s);
 
@@ -84,7 +83,7 @@ AF3.kinds.pwa = (s) => ({
     // ---- helpers ----
     const zcol = (r, c) => shade(BLUE, (ZV[r][c] - 0.5) * 0.35);
     const ucol = (v) => lerpColor(U_LIGHT, U_DEEP, v);
-    const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : `<text x="${x}" y="${y}" font-size="${size}" class="pw-t${o.muted ? ' muted' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''}${o.fill ? ` style="fill:${o.fill}"` : ''} opacity="${op.toFixed(2)}">${str}</text>`;
+    const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : String(str).includes('$') ? AF3.svgRich(x, y, size, str, { ...o, color: o.fill, op }) : `<text x="${x}" y="${y}" font-size="${size}" class="pw-t${o.muted ? ' muted' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''}${o.fill ? ` style="fill:${o.fill}"` : ''} opacity="${op.toFixed(2)}">${str}</text>`;
     const rect = (x, y, w, h, fill, stroke, sw, op = 1, rx = 0) => op < 0.01 ? '' : `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}"${rx ? ` rx="${rx}"` : ''} fill="${fill}" stroke="${stroke}" stroke-width="${sw}" opacity="${op.toFixed(2)}"/>`;
     const bars = (x, y, w, h, vals, col, grow = 1) => {
       const bh = Math.min(6, (h - 4) / C - 1.5), gap = 2, y0 = y + (h - (C * bh + (C - 1) * gap)) / 2;
@@ -116,12 +115,12 @@ AF3.kinds.pwa = (s) => ({
       // ---- step 1: z and m, position i ----
       h += grid(Z0, N, N, CELL, (r, cc) => zcol(r, cc), ramp(a, 0, 0.3));
       h += rect(Z0.x - 1.5, Z0.y + pi * CELL - 1.5, N * CELL + 3, CELL + 3, 'none', CI, 3, ramp(a, 0.4, 0.65));
-      h += txt(Z0.x + (N * CELL) / 2, Z0.y + N * CELL + 18, 20, 'z', ramp(a, 0, 0.3), { bold: true });
-      h += txt(Z0.x - 6, Z0.y + pi * CELL + CELL / 2, 14, 'row i', ramp(a, 0.45, 0.7), { anchor: 'end', bold: true, fill: CI });
+      h += txt(Z0.x + (N * CELL) / 2, Z0.y + N * CELL + 18, 20, '$z$', ramp(a, 0, 0.3), { bold: true });
+      h += txt(Z0.x - 6, Z0.y + pi * CELL + CELL / 2, 14, 'row $i$', ramp(a, 0.45, 0.7), { anchor: 'end', bold: true, fill: CI });
       h += mgrid(M0, ramp(a, 0, 0.3));
       h += rect(M0.x + pi * CELL - 1.5, M0.y - 1.5, CELL + 3, NS * CELL + 3, 'none', CI, 3, ramp(a, 0.5, 0.75));
-      h += txt(M0.x + (NP * CELL) / 2, M0.y + NS * CELL + 18, 20, 'm', ramp(a, 0, 0.3), { bold: true }) + txt(M0.x + (NP * CELL) / 2, M0.y + NS * CELL + 36, 13, 'a vector in every cell', ramp(a, 0, 0.3), { muted: true });
-      h += txt(M0.x + pi * CELL + CELL / 2, M0.y - 9, 13, 'i', ramp(a, 0.5, 0.75), { bold: true, fill: CI });
+      h += txt(M0.x + (NP * CELL) / 2, M0.y + NS * CELL + 18, 20, '$m$', ramp(a, 0, 0.3), { bold: true }) + txt(M0.x + (NP * CELL) / 2, M0.y + NS * CELL + 36, 13, 'a vector in every cell', ramp(a, 0, 0.3), { muted: true });
+      h += txt(M0.x + pi * CELL + CELL / 2, M0.y - 9, 13, '$i$', ramp(a, 0.5, 0.75), { bold: true, fill: CI });
 
       // ---- step 2: the scores from row i, then the weights ----
       let p = '';
@@ -136,9 +135,9 @@ AF3.kinds.pwa = (s) => ({
         p += rect(XJ(j) - 10, WB - bh, 20, bh, P_BAR, 'none', 0, ramp(b, 0.6, 0.75), 2) + txt(XJ(j), WB - bh - 9, 13, W[j].toFixed(2), ramp(b, 0.8, 1), { bold: true });
       }
       p += `<g opacity="${ramp(b, 0.6, 0.8).toFixed(2)}"><path d="M${V0.x} ${WB + 2} H${V0.x + NP * VC}" stroke="var(--muted)" stroke-width="1.4"/></g>`;
-      p += txt(V0.x + NP * VC + 12, WB - 38, 13, 'softmax: the', ramp(b, 0.7, 0.9), { anchor: 'start', muted: true }) + txt(V0.x + NP * VC + 12, WB - 22, 13, 'weights of row i', ramp(b, 0.7, 0.9), { anchor: 'start', muted: true });
+      p += txt(V0.x + NP * VC + 12, WB - 38, 13, 'softmax: the', ramp(b, 0.7, 0.9), { anchor: 'start', muted: true }) + txt(V0.x + NP * VC + 12, WB - 22, 13, 'weights of row $i$', ramp(b, 0.7, 0.9), { anchor: 'start', muted: true });
       for (let j = 0; j < NP; j++) p += txt(XJ(j), V0.y - 6, 13, String(j), ramp(b, 0.5, 0.8), { muted: true });
-      p += txt(V0.x - 10, V0.y - 6, 13, 'j', ramp(b, 0.5, 0.8), { anchor: 'end', muted: true });
+      p += txt(V0.x - 10, V0.y - 6, 13, '$j$', ramp(b, 0.5, 0.8), { anchor: 'end', muted: true });
 
       // ---- step 3: values and a gate from m ----
       const arr = ramp(c, 0, 0.25), grow = ramp(c, 0.15, 0.4);
@@ -146,10 +145,10 @@ AF3.kinds.pwa = (s) => ({
       p += txt(V0.x - 80, M0.y + 28, 13, 'linear', ramp(c, 0.3, 0.5), { muted: true, anchor: 'middle' });
       for (let sq = 0; sq < NS; sq++) for (let j = 0; j < NP; j++) p += vcell(V0.x + j * VC, YS(sq), VC, VC, V_BG, VV[sq][j], V_BAR, grow);
       for (let sq = 0; sq < NS; sq++) p += txt(V0.x - 10, YS(sq) + VC / 2, 13, String(sq), ramp(c, 0.2, 0.5), { anchor: 'end', muted: true });
-      p += txt(V0.x + (NP * VC) / 2, V0.y + NS * VC + 18, 17, 'v', grow, { bold: true }) + txt(V0.x + (NP * VC) / 2 + 20, V0.y + NS * VC + 18, 13, 'values', grow, { muted: true, anchor: 'start' });
+      p += txt(V0.x + (NP * VC) / 2, V0.y + NS * VC + 18, 17, '$v$', grow, { bold: true }) + txt(V0.x + (NP * VC) / 2 + 20, V0.y + NS * VC + 18, 13, 'values', grow, { muted: true, anchor: 'start' });
       const gOp = ramp(c, 0.55, 0.85) * (1 - 0 * d);
       for (let sq = 0; sq < NS; sq++) p += vcell(GX, YS(sq) + 3, CW, CW, G_BG, GV[sq], G_BAR, gOp);
-      p += txt(GX + CW / 2, V0.y + NS * VC + 18, 17, 'g', gOp, { bold: true }) + txt(GX + CW / 2, V0.y - 15, 13, 'gate', gOp, { muted: true });
+      p += txt(GX + CW / 2, V0.y + NS * VC + 18, 17, '$g$', gOp, { bold: true }) + txt(GX + CW / 2, V0.y - 15, 13, 'gate', gOp, { muted: true });
 
       // ---- step 4: the weighted sum along each row, times the gate ----
       for (let sq = 0; sq < NS; sq++) {
@@ -159,7 +158,7 @@ AF3.kinds.pwa = (s) => ({
         p += rect(V0.x + 0 * VC - 1.5, YS(sq) - 1.5, NP * VC + 3, VC + 3, 'none', 'var(--accent)', 2.5, pulse(d, t0, t0 + 0.2));
       }
       p += txt(SX + CW / 2, V0.y - 30, 13, 'weighted', ramp(d, 0.2, 0.45), { muted: true }) + txt(SX + CW / 2, V0.y - 15, 13, 'sum', ramp(d, 0.2, 0.45), { muted: true }) + txt(SX + CW / 2, V0.y + NS * VC + 18, 13, 'row by row', ramp(d, 0.3, 0.5), { muted: true });
-      p += txt(SX + CW + 24, YS(1) + VC, 22, '×', ramp(d, 0.55, 0.7)) + txt(GX + CW + 22, YS(1) + VC, 22, '=', ramp(d, 0.7, 0.85));
+      p += txt(SX + CW + 12, YS(1) + VC, 18, String.raw`$\times$`, ramp(d, 0.55, 0.7)) + txt(GX + CW + 12, YS(1) + VC, 18, '$=$', ramp(d, 0.7, 0.85));
       const headMove = ramp(e, 0, 0.25);
       for (let sq = 0; sq < NS; sq++) {
         const ox = lerp(OX, HX(0), headMove), ow = lerp(CW, 14, headMove);
@@ -184,7 +183,7 @@ AF3.kinds.pwa = (s) => ({
       }, ou);
       h += rect(OUT0.x + I * VC - 1.5, OUT0.y - 1.5, VC + 3, NS * VC + 3, 'none', CI, 3, ramp(e, 0.7, 0.8) * (1 - ramp(f, 0.04, 0.1)));
       if (f > 0.04 && f < 0.97) h += rect(OUT0.x + pi * VC - 1.5, OUT0.y - 1.5, VC + 3, NS * VC + 3, 'none', CI, 3, 1);
-      h += txt(OUT0.x + (NP * VC) / 2, OUT0.y + NS * VC + 18, 16, 'the update', ou, { bold: true }) + txt(OUT0.x + (NP * VC) / 2, OUT0.y + NS * VC + 36, 13, 'added to m', ramp(f, 0.9, 1), { muted: true });
+      h += txt(OUT0.x + (NP * VC) / 2, OUT0.y + NS * VC + 18, 16, 'the update', ou, { bold: true }) + txt(OUT0.x + (NP * VC) / 2, OUT0.y + NS * VC + 36, 13, 'added to $m$', ramp(f, 0.9, 1), { muted: true });
       const tr = ramp(e, 0.78, 0.98);
       if (tr > 0 && tr < 1) for (let sq = 0; sq < NS; sq++) h += rect(lerp(UX, OUT0.x + I * VC + 3, tr), lerp(YS(sq) + 3, OUT0.y + sq * VC + 3, tr), CW, CW, ucol(UPD[sq]), LINE, 1, 1);
       svg.innerHTML = h;
@@ -192,7 +191,7 @@ AF3.kinds.pwa = (s) => ({
 
     frame.innerHTML = `<h2 class="deck-heading">${esc(heading)}</h2>
       <div class="pw-wrap"><svg viewBox="0 0 1000 395" role="img" aria-label="Pair-weighted averaging: row i of z gives the weights of a softmax; the values from m are added up along each sequence with those weights and multiplied by a gate; eight heads are joined and a linear layer gives the update of position i in every sequence; the same is done for every position"></svg></div>
-      <div class="pw-caps">${CAPTIONS.map((t, i) => `<p class="pw-cap reveal-in" data-show="${i + 1}">${esc(t)}</p>`).join('')}</div>
+      <div class="pw-caps">${CAPTIONS.map((t, i) => `<p class="pw-cap reveal-in" data-show="${i + 1}">${AF3.rich(t, esc)}</p>`).join('')}</div>
       ${AF3.arch.mini(s.n, heading.length)}`;
     const svg = frame.querySelector('svg');
 

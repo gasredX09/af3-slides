@@ -32,9 +32,9 @@ const SPECS = {
   lig: {
     max: 100, strong: 'v', series: [{ key: 'v', label: '' }],
     groups: [
-      { label: ['AF3', '2019 cut-off', 'n = 428'], step: 1, highlight: true, values: { v: 76.4 }, ci: { v: [72.1, 80.3] }, colors: { v: ACC } },
-      { label: ['AutoDock', 'Vina', 'n = 428'], step: 2, values: { v: 52.3 }, ci: { v: [47.5, 57.2] } },
-      { label: ['RoseTTAFold', 'All-Atom', 'n = 427'], step: 2, values: { v: 42.0 }, ci: { v: [37.2, 46.8] } },
+      { label: ['AF3', '2019 cut-off', '$n = 428$'], step: 1, highlight: true, values: { v: 76.4 }, ci: { v: [72.1, 80.3] }, colors: { v: ACC } },
+      { label: ['AutoDock', 'Vina', '$n = 428$'], step: 2, values: { v: 52.3 }, ci: { v: [47.5, 57.2] } },
+      { label: ['RoseTTAFold', 'All-Atom', '$n = 427$'], step: 2, values: { v: 42.0 }, ci: { v: [37.2, 46.8] } },
     ],
     footnote: ['% of ligands within 2 Å (pocket-aligned RMSD). Bars: mean; whiskers: exact binomial 95% confidence intervals. ' + SRC],
   },
@@ -42,20 +42,20 @@ const SPECS = {
     max: 100, strong: 'af3',
     series: [{ key: 'af3', label: 'AF3', step: 1, color: ACC }, { key: 'rf', label: 'RoseTTAFold2NA', step: 2, color: GREY }, { key: 'al', label: 'AIchemy_RNA2 (has human input)', step: 3, color: AMB }],
     groups: [
-      { label: ['Protein–RNA', 'n = 25', '**'], values: { af3: 39.4, rf: 19.0 }, ci: { af3: [28.5, 51.9], rf: [15.6, 23.2] } },
-      { label: ['Protein–dsDNA', 'n = 38', '***'], values: { af3: 64.8, rf: 28.3 }, ci: { af3: [56.4, 71.7], rf: [20.7, 37.5] } },
-      { label: ['CASP15 RNA', 'n = 8'], values: { af3: 47.3, rf: 35.5, al: 54.5 }, ci: { af3: [41.7, 55.2], rf: [28.3, 43.8], al: [45.3, 62.4] } },
+      { label: ['Protein–RNA', '$n = 25$', '**'], values: { af3: 39.4, rf: 19.0 }, ci: { af3: [28.5, 51.9], rf: [15.6, 23.2] } },
+      { label: ['Protein–dsDNA', '$n = 38$', '***'], values: { af3: 64.8, rf: 28.3 }, ci: { af3: [56.4, 71.7], rf: [20.7, 37.5] } },
+      { label: ['CASP15 RNA', '$n = 8$'], values: { af3: 47.3, rf: 35.5, al: 54.5 }, ci: { af3: [41.7, 55.2], rf: [28.3, 43.8], al: [45.3, 62.4] } },
     ],
-    footnote: ['iLDDT (protein–RNA, protein–DNA) and LDDT (CASP15 RNA), 0 to 100. Whiskers: bootstrap 95% intervals. ** P < 0.01, *** P < 0.001. ' + SRC],
+    footnote: ['iLDDT (protein–RNA, protein–DNA) and LDDT (CASP15 RNA), 0 to 100. Whiskers: bootstrap 95% intervals. ** $P < 0.01$, *** $P < 0.001$. ' + SRC],
   },
   cov: {
     max: 100, strong: 'af3', series: [{ key: 'af3', label: 'AF3' }],
     groups: [
-      { label: ['Bonded', 'ligands', 'n = 66'], step: 1, values: { af3: 78.5 }, ci: { af3: [68.3, 86.2] }, colors: { af3: ACC } },
-      { label: ['Glycosylation', 'n = 28'], step: 1, values: { af3: 72.1 }, ci: { af3: [53.1, 85.7] }, colors: { af3: ACC } },
-      { label: ['Modified', 'protein', 'n = 40'], step: 1, values: { af3: 51.0 }, ci: { af3: [36.0, 65.6] }, colors: { af3: ACC } },
-      { label: ['Modified', 'DNA', 'n = 91'], step: 1, values: { af3: 68.6 }, ci: { af3: [59.0, 76.9] }, colors: { af3: ACC } },
-      { label: ['Modified', 'RNA', 'n = 23'], step: 1, values: { af3: 40.9 }, ci: { af3: [23.4, 59.9] }, colors: { af3: ACC } },
+      { label: ['Bonded', 'ligands', '$n = 66$'], step: 1, values: { af3: 78.5 }, ci: { af3: [68.3, 86.2] }, colors: { af3: ACC } },
+      { label: ['Glycosylation', '$n = 28$'], step: 1, values: { af3: 72.1 }, ci: { af3: [53.1, 85.7] }, colors: { af3: ACC } },
+      { label: ['Modified', 'protein', '$n = 40$'], step: 1, values: { af3: 51.0 }, ci: { af3: [36.0, 65.6] }, colors: { af3: ACC } },
+      { label: ['Modified', 'DNA', '$n = 91$'], step: 1, values: { af3: 68.6 }, ci: { af3: [59.0, 76.9] }, colors: { af3: ACC } },
+      { label: ['Modified', 'RNA', '$n = 23$'], step: 1, values: { af3: 40.9 }, ci: { af3: [23.4, 59.9] }, colors: { af3: ACC } },
     ],
     footnote: ['% of modifications within 2 Å. Glycosylation: high-quality single-residue sets (all-quality sets: about 46% and 42%). ' + SRC],
   },
@@ -63,11 +63,11 @@ const SPECS = {
     max: 100, strong: 'af3',
     series: [{ key: 'af3', label: 'AF3', step: 1, color: ACC }, { key: 'am', label: 'AlphaFold-Multimer v2.3', step: 2, color: GREY }],
     groups: [
-      { label: ['All protein–protein', 'n = 1,064', '***'], values: { af3: 76.6, am: 67.5 }, ci: { af3: [74.0, 78.9], am: [64.7, 70.1] } },
-      { label: ['Protein–antibody', 'n = 65', '***'], values: { af3: 62.9, am: 29.6 }, ci: { af3: [51.4, 73.5], am: [19.6, 40.4] } },
-      { label: ['Protein monomers', 'n = 338', '***'], values: { af3: 86.9, am: 85.5 }, ci: { af3: [86.2, 87.6], am: [84.7, 86.1] } },
+      { label: ['All protein–protein', '$n = 1{,}064$', '***'], values: { af3: 76.6, am: 67.5 }, ci: { af3: [74.0, 78.9], am: [64.7, 70.1] } },
+      { label: ['Protein–antibody', '$n = 65$', '***'], values: { af3: 62.9, am: 29.6 }, ci: { af3: [51.4, 73.5], am: [19.6, 40.4] } },
+      { label: ['Protein monomers', '$n = 338$', '***'], values: { af3: 86.9, am: 85.5 }, ci: { af3: [86.2, 87.6], am: [84.7, 86.1] } },
     ],
-    footnote: ['% DockQ > 0.23 (protein–protein, antibody) and LDDT (monomers). Whiskers: bootstrap 95% intervals. *** P < 0.001. ' + SRC],
+    footnote: ['% DockQ $> 0.23$ (protein–protein, antibody) and LDDT (monomers). Whiskers: bootstrap 95% intervals. *** $P < 0.001$. ' + SRC],
   },
   lead: {
     max: 40, format: FORMAT_LEAD, strong: 'd', series: [{ key: 'd', label: '' }],
@@ -89,9 +89,9 @@ const FINAL = { lig: 2, nuc: 3, cov: 1, prot: 2, lead: 1 };
 const MAP = [['lig', 1], ['lig', 2], ['nuc', 1], ['nuc', 2], ['nuc', 3], ['cov', 1], ['prot', 1], ['prot', 2], ['lead', 1]];
 const CAPTIONS = [
   'Protein–ligand on PoseBusters V1 (428 structures): AF3 puts 76.4% of ligands within 2 Å of the true pose. Bars are means, whiskers are 95% confidence intervals.',
-  'AutoDock Vina, which is told where the pocket is, gets 52.3%, and RoseTTAFold All-Atom 42.0%. AF3 against Vina: P = 2.27 × 10⁻¹³ (Fisher’s exact test).',
+  'AutoDock Vina, which is told where the pocket is, gets 52.3%, and RoseTTAFold All-Atom 42.0%. AF3 against Vina: $P = 2.27 \\times 10^{-13}$ (Fisher’s exact test).',
   'Protein–nucleic acid and RNA: AF3 scores 39.4 on protein–RNA (25 structures), 64.8 on protein–DNA (38) and 47.3 on CASP15 RNA (8 targets).',
-  'RoseTTAFold2NA scores 19.0, 28.3 and 35.5, so AF3 is ahead on all three. The stars: P < 0.01 for protein–RNA and P < 0.001 for protein–DNA.',
+  'RoseTTAFold2NA scores 19.0, 28.3 and 35.5, so AF3 is ahead on all three. The stars: $P < 0.01$ for protein–RNA and $P < 0.001$ for protein–DNA.',
   'But on CASP15 RNA, AIchemy_RNA2, an entry with human input, scores 54.5, above AF3’s 47.3. With 8 targets the intervals are wide, and they overlap.',
   'Covalent modifications, as the share of poses within 2 Å: bonded ligands 78.5%, glycosylation 72.1%, modified residues 51.0% for protein, 68.6% for DNA and 40.9% for RNA. No baseline is shown.',
   'Proteins: AF3 gets a DockQ above 0.23 for 76.6% of protein–protein interface clusters and 62.9% of antibody–antigen ones, and an LDDT of 86.9 on monomers.',
@@ -117,7 +117,7 @@ AF3.kinds.evalbars = (s) => ({
     `);
     const title = AF3.texts(s).slice().sort((a, b) => a.g.y - b.g.y)[0];
     frame.innerHTML = `<h2 class="deck-heading">${esc(AF3.plain(title.paras[0]))}</h2>
-      <div class="eb-caps">${CAPTIONS.map((t, i) => `<p class="eb-cap reveal-in" data-show="${i + 1}">${esc(t)}</p>`).join('')}</div>`;
+      <div class="eb-caps">${CAPTIONS.map((t, i) => `<p class="eb-cap reveal-in" data-show="${i + 1}">${AF3.rich(t, esc)}</p>`).join('')}</div>`;
 
     // each chart is the helper's own; its bars get the theme colours we want, a whisker for the confidence interval, and the label above the whisker
     const build = (spec) => {
@@ -143,6 +143,10 @@ AF3.kinds.evalbars = (s) => ({
         });
       });
       plot.root.querySelectorAll('.deck-plot-key i').forEach((i, k) => { if (spec.series[k].color) i.style.background = spec.series[k].color; });
+      // the runtime escapes labels and footnotes as text: write them again with the math (the $n = 428$ and $P < 0.01$ of the specs) set in KaTeX
+      [...plot.root.querySelectorAll('.deck-plot-label')].forEach((el, gi) => { el.innerHTML = [].concat(spec.groups[gi].label).map((l) => AF3.rich(l, esc)).join('<br>'); });
+      const foot = plot.root.querySelector('.deck-plot-foot');
+      if (foot) foot.innerHTML = spec.footnote.map((l) => AF3.rich(l, esc)).join('<br>');
       return plot;
     };
     const plots = ORDER.map((k) => build(SPECS[k]));

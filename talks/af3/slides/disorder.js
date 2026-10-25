@@ -101,7 +101,9 @@ AF3.kinds.disorder = (s) => ({
     const pic = s.items.find((it) => it.kind === 'pic');
     const IMG = AF3.fig(pic.file);
 
-    const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="${size}" class="dz-t${o.muted ? ' muted' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''}${o.fill ? ` style="fill:${o.fill}"` : ''} opacity="${op.toFixed(2)}">${str}</text>`;
+    // a label with math: the whole string in one <span>, so the spaces next to a formula survive (AF3.svgRich's flex box drops them)
+    const mathTxt = (x, y, size, str, o) => `<foreignObject ${AF3.foAttrs(x, y, size, o)} opacity="${o.op.toFixed(2)}">${AF3.foInner(`<span>${AF3.rich(str, esc)}</span>`, size, o)}</foreignObject>`;
+    const txt = (x, y, size, str, op, o = {}) => op < 0.01 ? '' : str.includes('$') ? mathTxt(x, y, size, o.bold ? str.replace(/\$([^$]+)\$/g, '$\\boldsymbol{$1}$') : str, { anchor: o.anchor, op, muted: o.muted, bold: o.bold, color: o.fill }) : `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="${size}" class="dz-t${o.muted ? ' muted' : ''}" text-anchor="${o.anchor || 'middle'}"${o.bold ? ' font-weight="700"' : ''}${o.fill ? ` style="fill:${o.fill}"` : ''} opacity="${op.toFixed(2)}">${str}</text>`;
     const rect = (x, y, w, h, fill, stroke, sw, op = 1, rx = 0) => op < 0.01 ? '' : `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}"${rx ? ` rx="${rx}"` : ''} fill="${fill}" stroke="${stroke}" stroke-width="${sw}" opacity="${op.toFixed(2)}"/>`;
     const arrow = (x1, y, x2, op) => op < 0.01 ? '' : `<g opacity="${op.toFixed(2)}"><line x1="${x1.toFixed(1)}" y1="${y.toFixed(1)}" x2="${x2 - 6}" y2="${y.toFixed(1)}" stroke="var(--muted)" stroke-width="2"/><polygon points="${x2},${y.toFixed(1)} ${x2 - 8},${(y - 5).toFixed(1)} ${x2 - 8},${(y + 5).toFixed(1)}" fill="var(--muted)"/></g>`;
     const mark = (x, y, ok, op) => op < 0.01 ? '' : (ok
@@ -154,7 +156,7 @@ AF3.kinds.disorder = (s) => ({
       // ---- the colour key, while the structures are on screen ----
       const leg = ramp(K[2], 0.4, 0.8) * (1 - ramp(K[6], 0, 0.3));
       h += txt(150, 372, 14, 'Colour is pLDDT, the model’s confidence in each residue:', leg, { anchor: 'start', muted: true });
-      [['≤ 50', 0], ['50–70', 1], ['70–90', 2], ['> 90', 3]].forEach(([lab, i]) => {
+      [['$\\le 50$', 0], ['50–70', 1], ['70–90', 2], ['$> 90$', 3]].forEach(([lab, i]) => {
         const x = 560 + i * 110;
         h += rect(x, 366, 22, 12, PL[i], 'var(--muted)', 1, leg, 2) + txt(x + 29, 372, 14, lab, leg, { anchor: 'start', muted: true });
       });

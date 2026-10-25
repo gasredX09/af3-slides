@@ -36,11 +36,11 @@ const H1 = 80, H2 = 240, HX = (65 / 384) * H2;   // c_atom 128, c_token 384, and
 const PURPLE = '#c27bc9', PINK = '#f2b8e6', ORANGE = '#f7b97c';
 
 const STEPS = [
-  { head: 'q: one vector per atom', dims: '', text: '128 numbers for each atom. Atoms belong to tokens: a standard residue is one token (AA), a ligand atom is a token of its own (atom).' },
-  { head: 'linear projection', dims: '[c_atom → c_token]', text: 'Each atom’s vector goes from 128 to 384 numbers (followed by a ReLU).' },
+  { head: '$q$: one vector per atom', dims: '', text: '128 numbers for each atom. Atoms belong to tokens: a standard residue is one token (AA), a ligand atom is a token of its own (atom).' },
+  { head: 'linear projection', dims: '$[c_{\\mathrm{atom}} \\to c_{\\mathrm{token}}]$', text: 'Each atom’s vector goes from 128 to 384 numbers (followed by a ReLU).' },
   { head: 'average all atoms within each token', dims: '', text: 'One vector per token: the mean over its atoms. A token with one atom keeps its own. From here on the trunk works on tokens, not atoms.' },
-  { head: 'add token-level features from the MSA where applicable', dims: '', text: 'Residue type, MSA properties at position i, etc.: 65 more numbers per token (restype 32, profile 32, deletion mean 1).' },
-  { head: 'linear projection', dims: '[c_token + 65 → c_token]', text: 'Back to 384 numbers per token: the initial single representation.' },
+  { head: 'add token-level features from the MSA where applicable', dims: '', text: 'Residue type, MSA properties at position $i$, etc.: 65 more numbers per token (restype 32, profile 32, deletion mean 1).' },
+  { head: 'linear projection', dims: '$[c_{\\mathrm{token}} + 65 \\to c_{\\mathrm{token}}]$', text: 'Back to 384 numbers per token: the initial single representation.' },
 ];
 
 AF3.kinds.atom2token = (s) => ({
@@ -67,11 +67,10 @@ AF3.kinds.atom2token = (s) => ({
 
     frame.innerHTML = `<h2 class="deck-heading">${esc(AF3.plain(title.paras[0]))}</h2>
       <div class="at-wrap"><svg viewBox="70 0 520 390" role="img" aria-label="One tensor of atom vectors: projected, averaged into token vectors, joined by MSA features, and projected again"></svg></div>
-      <div class="at-side">${STEPS.map((st, i) => `<div class="at-step reveal-in" data-show="${i + 1}"><h3>${esc(st.head)}</h3>${st.dims ? `<p class="dims" style="color:var(--fg)">${esc(st.dims)}</p>` : ''}<p>${esc(st.text)}</p></div>`).join('')}</div>
+      <div class="at-side">${STEPS.map((st, i) => `<div class="at-step reveal-in" data-show="${i + 1}"><h3>${AF3.rich(st.head, esc)}</h3>${st.dims ? `<p class="dims" style="color:var(--fg)">${AF3.rich(st.dims, esc)}</p>` : ''}<p>${AF3.rich(st.text, esc)}</p></div>`).join('')}</div>
       ${AF3.arch.mini(s.n, AF3.plain(title.paras[0]).length)}`;
     const svg = frame.querySelector('svg');
 
-    const sub = (a, b, c = '') => `${a}<tspan dy="5" font-size="75%">${b}</tspan>${c ? `<tspan dy="-5">${c}</tspan>` : ''}`;
     const LINE = 'rgba(0,0,0,.28)';
 
     const draw = (st) => {
@@ -82,8 +81,8 @@ AF3.kinds.atom2token = (s) => ({
       const left = X0A + (X0T - X0A) * p3, right = X0A + N_ATOMS * PITCH + (X0T + 4 * W_T + 3 * GAP - (X0A + N_ATOMS * PITCH)) * p3;
       let h = '';
       // the name of the tensor
-      const name = st.e > 0.5 ? `s<tspan dy="-9" font-size="62%">init</tspan>` : st.d > 0.5 ? `s<tspan dy="-9" font-size="62%">inputs</tspan>` : st.c > 0.5 ? 'a' : 'q';
-      h += `<text x="${CX}" y="${(Y0 - 26).toFixed(1)}" font-size="32" font-weight="700" text-anchor="middle" class="at-t" opacity="${ramp(st.a, 0, 0.3).toFixed(2)}">${name}</text>`;
+      const name = st.e > 0.5 ? 's_{\\mathrm{init}}' : st.d > 0.5 ? 's_{\\mathrm{inputs}}' : st.c > 0.5 ? 'a' : 'q';
+      h += AF3.svgMath(CX, Y0 - 26, 35, name, { op: ramp(st.a, 0, 0.3), w: 160 });
       // the columns: atoms moving together into their token, their shades blending into the token's mean
       const geom = (i) => {
         const j = tokOf(i), g = TOK[j], k = g.indexOf(i), n = g.length;
@@ -119,13 +118,13 @@ AF3.kinds.atom2token = (s) => ({
           + `<text x="${((x1 + x2) / 2).toFixed(1)}" y="${(bottom + 26).toFixed(1)}" font-size="${KIND[j] === 'atom' ? 13.5 : 17}" text-anchor="middle" class="at-t muted" opacity="${ramp(st.a, 0.2, 0.5).toFixed(2)}">${KIND[j]}</text>`;
       });
       const wo = ramp(p3, 0.35, 0.65);
-      h += `<text x="${CX}" y="${(bottom + 52).toFixed(1)}" font-size="20" text-anchor="middle" class="at-t" opacity="${(ramp(st.a, 0.3, 0.6) * (1 - wo)).toFixed(2)}">${sub('N', 'atoms')}</text>`
-        + `<text x="${CX}" y="${(bottom + 52).toFixed(1)}" font-size="20" text-anchor="middle" class="at-t" opacity="${(ramp(st.a, 0.3, 0.6) * wo).toFixed(2)}">${sub('N', 'tokens')}</text>`;
+      h += AF3.svgMath(CX, bottom + 46, 21, 'N_{\\mathrm{atoms}}', { op: ramp(st.a, 0.3, 0.6) * (1 - wo), w: 160 })
+        + AF3.svgMath(CX, bottom + 46, 21, 'N_{\\mathrm{tokens}}', { op: ramp(st.a, 0.3, 0.6) * wo, w: 160 });
       // the height: c_atom, c_token, c_token + 65, c_token
-      const cLabel = st.e > 0.5 ? sub('c', 'token', ' = 384') : st.d > 0.5 ? sub('c', 'token', ' + 65 = 449') : st.b > 0.5 ? sub('c', 'token', ' = 384') : sub('c', 'atom', ' = 128');
+      const cLabel = st.e > 0.5 ? 'c_{\\mathrm{token}} = 384' : st.d > 0.5 ? 'c_{\\mathrm{token}} + 65 = 449' : st.b > 0.5 ? 'c_{\\mathrm{token}} = 384' : 'c_{\\mathrm{atom}} = 128';
       const bx = left - 12;
       h += `<path d="M${bx + 6} ${Y0} L${bx} ${Y0} L${bx} ${bottom.toFixed(1)} L${bx + 6} ${bottom.toFixed(1)}" stroke="var(--muted)" stroke-width="1.5" fill="none" opacity="${ramp(st.a, 0.3, 0.6).toFixed(2)}"/>`
-        + `<text x="0" y="0" font-size="19" text-anchor="middle" class="at-t" transform="translate(${bx - 14} ${((Y0 + bottom) / 2).toFixed(1)}) rotate(-90)" opacity="${ramp(st.a, 0.3, 0.6).toFixed(2)}">${cLabel}</text>`;
+        + `<g transform="translate(${bx - 14} ${((Y0 + bottom) / 2).toFixed(1)}) rotate(-90)">${AF3.svgMath(0, 0, 20, cLabel, { op: ramp(st.a, 0.3, 0.6), w: 260 })}</g>`;
       svg.innerHTML = h;
     };
 

@@ -27,12 +27,12 @@ const toward = (a, b, d) => { const L = Math.hypot(b[0] - a[0], b[1] - a[1]); re
 const lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
 
 const STEPS = [
-  { head: 'z', sub: 'ij', text: 'The model’s current belief about how tokens i and j relate. This is the edge we want to update.' },
-  { head: 'outgoing edges', text: 'Bring in a third token, k. Its two edges with i and j leave from i and j: z_ik and z_jk.' },
-  { head: 'combine the two edges', text: 'If i relates to k in one way and j relates to k in another, that constrains how i relates to j. The two are multiplied, and the result updates z_ij.' },
-  { head: 'every other token k', text: 'The same is done through every other token k, and the results are added up.', dims: 'Σ<sub>k</sub> a<sub>ik</sub> ⊙ b<sub>jk</sub>' },
-  { head: 'incoming edges', text: 'The mirror image: the two edges now arrive at i and j, z_ki and z_kj. They are combined in the same way.', dims: 'Σ<sub>k</sub> a<sub>ki</sub> ⊙ b<sub>kj</sub>' },
-  { head: 'in every Pairformer block', list: ['Triangle update, outgoing', 'Triangle update, incoming', 'Triangle attention, starting node', 'Triangle attention, ending node'], text: 'All 48 blocks repeat these, and the result is added to z each time.' },
+  { head: '$z_{ij}$', text: 'The model’s current belief about how tokens $i$ and $j$ relate. This is the edge we want to update.' },
+  { head: 'outgoing edges', text: 'Bring in a third token, $k$. Its two edges with $i$ and $j$ leave from $i$ and $j$: $z_{ik}$ and $z_{jk}$.' },
+  { head: 'combine the two edges', text: 'If $i$ relates to $k$ in one way and $j$ relates to $k$ in another, that constrains how $i$ relates to $j$. The two are multiplied, and the result updates $z_{ij}$.' },
+  { head: 'every other token $k$', text: 'The same is done through every other token $k$, and the results are added up.', dims: String.raw`$\sum_k a_{ik} \odot b_{jk}$` },
+  { head: 'incoming edges', text: 'The mirror image: the two edges now arrive at $i$ and $j$, $z_{ki}$ and $z_{kj}$. They are combined in the same way.', dims: String.raw`$\sum_k a_{ki} \odot b_{kj}$` },
+  { head: 'in every Pairformer block', list: ['Triangle update, outgoing', 'Triangle update, incoming', 'Triangle attention, starting node', 'Triangle attention, ending node'], text: 'All 48 blocks repeat these, and the result is added to $z$ each time.' },
 ];
 
 AF3.kinds.triangle = (s) => ({
@@ -46,9 +46,7 @@ AF3.kinds.triangle = (s) => ({
       .tg-side { position: absolute; left: 69%; right: 4.2%; top: 26%; }
       .tg-step { position: absolute; left: 0; right: 0; top: 0; }
       .tg-step h3 { margin: 0 0 .35em; font-size: var(--t-lead); font-weight: 700; color: var(--accent); line-height: 1.15; }
-      .tg-step h3 sub { font-size: .7em; }
       .tg-step .dims { margin: 0 0 .5em; font-size: var(--t-body); font-weight: 700; line-height: 1.2; color: var(--fg); }
-      .tg-step .dims sub { font-size: .7em; }
       .tg-step p { margin: 0; font-size: var(--t-small); line-height: 1.35; color: var(--muted); }
       .tg-step ol { margin: 0 0 .6em; padding: 0; list-style: none; font-size: var(--t-small); font-weight: 600; }
       .tg-step li { margin-bottom: .35em; padding: .3em .7em; border-radius: .7em; border: 1.5px solid color-mix(in srgb, var(--muted) 35%, transparent); color: var(--muted); }
@@ -57,10 +55,9 @@ AF3.kinds.triangle = (s) => ({
     const title = AF3.texts(s).find((t) => t.ph === 'title');
     frame.innerHTML = `<h2 class="deck-heading">${esc(AF3.plain(title.paras[0]))}</h2>
       <div class="tg-wrap"><svg viewBox="0 0 520 380" role="img" aria-label="Three tokens i, j and k: the edges z_ik and z_jk are combined to update z_ij, through every k, with outgoing and then incoming edges"></svg></div>
-      <div class="tg-side">${STEPS.map((st, i) => `<div class="tg-step reveal-in" data-show="${i + 1}"><h3>${st.sub ? `${esc(st.head)}<sub>${esc(st.sub)}</sub>` : esc(st.head)}</h3>${st.dims ? `<p class="dims">${st.dims}</p>` : ''}${st.list ? `<ol>${st.list.map((l, n) => `<li class="${n < 2 ? 'on' : ''}">${esc(l)}</li>`).join('')}</ol>` : ''}<p>${esc(st.text).replace(/z_([a-z]{2})/g, 'z<sub>$1</sub>')}</p></div>`).join('')}</div>
+      <div class="tg-side">${STEPS.map((st, i) => `<div class="tg-step reveal-in" data-show="${i + 1}"><h3>${AF3.rich(st.head, esc)}</h3>${st.dims ? `<p class="dims">${AF3.rich(st.dims, esc)}</p>` : ''}${st.list ? `<ol>${st.list.map((l, n) => `<li class="${n < 2 ? 'on' : ''}">${esc(l)}</li>`).join('')}</ol>` : ''}<p>${AF3.rich(st.text, esc)}</p></div>`).join('')}</div>
       ${AF3.arch.mini(s.n, AF3.plain(title.paras[0]).length)}`;
     const svg = frame.querySelector('svg');
-    const sub = (a, b) => `${a}<tspan dy="5" font-size="75%">${b}</tspan>`;
 
     const draw = (st) => {
       const a = ramp(st.a, 0, 0.4), b = ramp(st.b, 0, 0.35), flip = ramp(st.e, 0, 0.4);
@@ -92,14 +89,14 @@ AF3.kinds.triangle = (s) => ({
       // the edge to update: i to j, accent, thicker once updated
       h += arrow(I, J, 1, a, 'var(--accent)', 5 + 3 * upd);
       // the tokens
-      const node = (p, label, r, op = 1) => `<circle cx="${p[0]}" cy="${p[1]}" r="${r}" fill="${NODE}" opacity="${op.toFixed(2)}"/><text x="${p[0]}" y="${p[1] + 1}" font-size="${(r * 0.8).toFixed(0)}" text-anchor="middle" class="tg-t" style="fill:${INK}" opacity="${op.toFixed(2)}">${label}</text>`;
+      const node = (p, label, r, op = 1) => `<circle cx="${p[0]}" cy="${p[1]}" r="${r}" fill="${NODE}" opacity="${op.toFixed(2)}"/>${AF3.svgMath(p[0], p[1] + 1, +(r * 0.8).toFixed(0), label, { color: INK, op })}`;
       h += node(I, 'i', R, a) + node(J, 'j', R, a) + node(K, 'k', R, b);
       EXTRA.forEach((p) => { h += node(p, 'k', 22, ex); });
       // the labels of the edges
-      const lab = (p, text, op, dx = 0, dy = 0) => `<text x="${p[0] + dx}" y="${p[1] + dy}" font-size="21" text-anchor="middle" class="tg-t" opacity="${op.toFixed(2)}">${text}</text>`;
-      h += lab(mid(I, J), sub('z', 'i,j'), a, 0, 28)
-        + lab(mid(I, K), sub('z', 'i,k'), b * (1 - flip), -34, -4) + lab(mid(J, K), sub('z', 'j,k'), b * (1 - flip), 36, -4)
-        + lab(mid(I, K), sub('z', 'k,i'), b * flip, -34, -4) + lab(mid(J, K), sub('z', 'k,j'), b * flip, 36, -4);
+      const lab = (p, src, op, dx = 0, dy = 0) => AF3.svgMath(p[0] + dx, p[1] + dy, 21, src, { op });
+      h += lab(mid(I, J), 'z_{ij}', a, 0, 28)
+        + lab(mid(I, K), 'z_{ik}', b * (1 - flip), -34, -4) + lab(mid(J, K), 'z_{jk}', b * (1 - flip), 36, -4)
+        + lab(mid(I, K), 'z_{ki}', b * flip, -34, -4) + lab(mid(J, K), 'z_{kj}', b * flip, 36, -4);
       h += `<text x="260" y="352" font-size="22" font-weight="700" text-anchor="middle" class="tg-t" style="fill:var(--accent)" opacity="${(b * (1 - flip) * (1 - ramp(st.f, 0, 0.3))).toFixed(2)}">outgoing edges</text>`
         + `<text x="260" y="352" font-size="22" font-weight="700" text-anchor="middle" class="tg-t" style="fill:var(--accent)" opacity="${(flip * (1 - ramp(st.f, 0, 0.3))).toFixed(2)}">incoming edges</text>`;
 
@@ -124,7 +121,7 @@ AF3.kinds.triangle = (s) => ({
       EXTRA.forEach((p, m) => { h += combine(p, Math.max(0, Math.min(1, (pulse4 - 0.05 - m * 0.15) / 0.4)), 0.9, 6); });
       h += combine(K, pulse5, 1);
       // the sum
-      h += `<text x="${mid(I, J)[0] + 90}" y="${mid(I, J)[1] + 30}" font-size="30" font-weight="700" text-anchor="middle" class="tg-t" style="fill:var(--accent)" opacity="${(ramp(st.d, 0.55, 0.8) * (1 - ramp(st.e, 0, 0.3))).toFixed(2)}">Σ</text>`;
+      h += AF3.svgMath(mid(I, J)[0] + 90, mid(I, J)[1] + 30, 24, String.raw`\sum`, { accent: true, op: ramp(st.d, 0.55, 0.8) * (1 - ramp(st.e, 0, 0.3)) });
       svg.innerHTML = h;
     };
 
