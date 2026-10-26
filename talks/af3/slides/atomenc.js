@@ -1,4 +1,4 @@
-// "Token -> atom -> token level aggregation" (slide 46): the first half of the diffusion module (Simon, The Illustrated AlphaFold: 2c noisy
+// "Atom encoder: atoms to tokens" (slide 46, whose pptx title "Token -> atom -> token level aggregation" named the whole loop): the first half of the diffusion module (Simon, The Illustrated AlphaFold: 2c noisy
 // positions to r, 2d add r to q, 2e atom attention, 2f aggregate to tokens) redrawn with the tensors as matrices, atoms along x, numbers per
 // atom along y, and played a click at a time. Slide 45 shows the whole flow; this one shows what happens to the shapes:
 //
@@ -68,7 +68,7 @@ AF3.kinds.atomenc = (s) => ({
       .ae-caps { position: absolute; left: 4.2%; right: 4.2%; top: 82.5%; height: 10.5%; }
       .ae-cap { position: absolute; left: 0; right: 0; top: 0; margin: 0; font-size: var(--t-small); line-height: 1.3; font-weight: 600; }
     `);
-    const title = AF3.texts(s).find((t) => t.ph === 'title');
+    const TITLE = 'Atom encoder: atoms to tokens';
 
     // ---- the toy data: every cell is a made-up value in [0, 1], drawn as a shade ----
     const rand = rng(SEED);
@@ -192,10 +192,10 @@ AF3.kinds.atomenc = (s) => ({
       svg.innerHTML = h;
     };
 
-    frame.innerHTML = `<h2 class="deck-heading">${esc(AF3.plain(title.paras[0]).replace(/->/g, '→'))}</h2>
+    frame.innerHTML = `<h2 class="deck-heading">${esc(TITLE)}</h2>
       <div class="ae-wrap"><svg viewBox="0 0 1000 395" role="img" aria-label="Atoms to tokens in the diffusion module: the noisy positions r, three numbers per atom, are lifted to 128 numbers by a linear layer and added to q; the atoms attend to atoms close by in the sequence with a bias for each pair from p; each atom's vector is projected to 768 numbers and the vectors of the atoms of a token are averaged into a, one vector per token; a goes to the token-level transformer, and q and p are kept for the decoder"></svg></div>
       <div class="ae-caps">${CAPTIONS.map((t, i) => `<p class="ae-cap reveal-in" data-show="${i + 1}">${AF3.rich(t, esc)}</p>`).join('')}</div>
-      ${AF3.arch.mini(s.n, AF3.plain(title.paras[0]).length)}`;
+      ${AF3.arch.mini(s.n, TITLE.length)}`;
     const svg = frame.querySelector('svg');
 
     const KEYS = ['a', 'b', 'c', 'd', 'e', 'f'];

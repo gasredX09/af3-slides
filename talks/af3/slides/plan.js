@@ -46,7 +46,7 @@ const KIND = {
   17: 'representations',                      // s, z, q and p redrawn and built up (was a picture: set to generic to restore)
   18: 'inputprep',                             // the input-preparation flow redrawn and built up, its notes as captions (was a picture)
   21: 'coevolution',                           // contacts, the alignment and the loop between them redrawn and built up (was a picture)
-  24: 'inputprep',                             // the same figure as slide 18, with the input embedder lit: the same animation
+  24: 'inputprep',                             // the same figure as slide 18, with the input embedder lit: the same animation (hidden: HIDE below)
   19: 'tokens',                                // the five molecules redrawn, with the tokenization rule played on them (was a picture)
   13: 'arch',                                  // the interactive architecture map (was the picture: set to generic to restore)
   22: 'conformer',                             // a real conformer of phosphoserine, from the five boxes of the generated picture (was a picture)
@@ -76,7 +76,7 @@ const KIND = {
 //   5: "Building on AF2", an AI-made picture of AF2 against AF3 with the line "Magic sauce: Diffusion + architectural tricks"; slide 101 says the same with the real changes
 //   60: the Future Work slide, four lines of text; they are the next steps under the four limits on slide 58
 //   61: the first Conclusion, two sentences of text; its two points are in the conclusion cards and their last line (slide 62)
-const HIDE = [5, 16, 20, 25, 32, 60, 61];
+const HIDE = [5, 16, 20, 24, 25, 32, 60, 61];
 
 // footer section -> the slides in it; the title and the appendix are in none
 const SECTION_OF = (n) => (n === 101 || n === 102 ? '3' : n === 103 ? '4' : n === 104 ? '6' : n === 1 ? null : n <= 7 ? '1' : n <= 11 ? '2' : n <= 49 ? '3' : n <= 52 ? '4' : n <= 56 ? '5' : n <= 64 ? '6' : null);
@@ -98,10 +98,10 @@ const APPENDIX = [65, 66, 70, 69, 71, 72, 68, 73, 74, 67];
 //   101  "From AF2 to AF3: three swaps", the first slide of the Main idea section after its outline (the conclusion's three cards, shown first here)
 //   102  the recap that closes the Main idea section (the roadmap, every stage done)
 //   103  "AF3's confidence scores track its accuracy" (Fig. 4a), the last slide of Experiments, after the comparison bars
-//   104  "Using AF3 yourself", after the conclusion and before the slide for the audience
+//   104  "Using AF3 yourself", after the limitations and before the conclusion, so the conclusion is the last content slide
 // Slide 6 (why it is important) opens the talk, then AF2 recalled (3), the question (4) and why it is hard (7). The cases end on the disorder slide (55), which leads into the limitations.
 const NEW = { 101: { ...AF3.slide(62), n: 101 }, 102: { ...AF3.slide(14), n: 102 }, 103: { ...AF3.slide(52), n: 103 }, 104: { ...AF3.slide(62), n: 104 } };
-const MAIN = [1, 2, 6, 3, 4, 5, 7, 8, 9, 10, 11, 12, 101, ...Array.from({ length: 37 }, (_, i) => 13 + i), 102, 50, 51, 52, 103, 53, 54, 56, 55, 57, 58, 59, 60, 61, 62, 104, 63, 64];
+const MAIN = [1, 2, 6, 3, 4, 5, 7, 8, 9, 10, 11, 12, 101, ...Array.from({ length: 37 }, (_, i) => 13 + i), 102, 50, 51, 52, 103, 53, 54, 56, 55, 57, 58, 59, 60, 61, 104, 62, 63, 64];
 const ORDER = MAIN.concat(APPENDIX).map((n) => NEW[n] || AF3.slide(n));
 
 for (const s of ORDER) {
